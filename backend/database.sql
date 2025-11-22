@@ -1,0 +1,131 @@
+-- DentalCare System Database Schema
+-- MySQL Database Setup
+
+-- Drop and Create database
+DROP DATABASE IF EXISTS dental_db;
+CREATE DATABASE dental_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE dental_db;
+
+-- Users table
+CREATE TABLE users (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    email_verified_at DATETIME DEFAULT NULL,
+    verification_token VARCHAR(255) DEFAULT NULL,
+    password VARCHAR(255) NULL,
+    google_id VARCHAR(255) UNIQUE DEFAULT NULL,
+    role ENUM('admin', 'staff', 'user', 'doctor') NOT NULL DEFAULT 'user',
+    is_suspended TINYINT(1) DEFAULT 0,
+    suspended_at TIMESTAMP NULL,
+    suspension_reason TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_role (role),
+    INDEX idx_email (email),
+    INDEX idx_username (username),
+    INDEX idx_google_id (google_id),
+    INDEX idx_is_suspended (is_suspended),
+    INDEX idx_verification_token (verification_token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Doctors table
+CREATE TABLE doctors (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) UNSIGNED NULL,
+    name VARCHAR(255) NOT NULL,
+    specialty VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_specialty (specialty),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Services table
+CREATE TABLE services (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    duration_mins INT(11) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Appointments table
+CREATE TABLE appointments (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) UNSIGNED NOT NULL,
+    doctor_id INT(11) UNSIGNED NOT NULL,
+    service_id INT(11) UNSIGNED NOT NULL,
+    appointment_date DATE NOT NULL,
+    time_slot TIME NOT NULL,
+    payment_method ENUM('gcash', 'paypal', 'clinic') DEFAULT 'clinic',
+    payment_status ENUM('unpaid', 'pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+    payment_reference VARCHAR(255) NULL,
+    paid_at TIMESTAMP NULL,
+    status ENUM('pending', 'confirmed', 'cancelled', 'declined', 'completed') NOT NULL DEFAULT 'pending',
+    decline_message TEXT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE RESTRICT,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT,
+    
+    UNIQUE KEY unique_booking (doctor_id, appointment_date, time_slot),
+    INDEX idx_user_id (user_id),
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_service_id (service_id),
+    INDEX idx_appointment_date (appointment_date),
+    INDEX idx_status (status),
+    INDEX idx_payment_status (payment_status),
+    INDEX idx_payment_method (payment_method)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- INSERT SAMPLE DATA
+-- =====================================================
+
+-- Insert services with Philippine prices
+INSERT INTO services (name, price, duration_mins) VALUES 
+('Dental Cleaning and Prophylaxis', 1500.00, 30),
+('Tooth Extraction (Simple)', 2500.00, 30),
+('Tooth Extraction (Surgical)', 5000.00, 60),
+('Dental Filling (Composite)', 2000.00, 45),
+('Root Canal Treatment', 8000.00, 90),
+('Teeth Whitening', 6000.00, 60),
+('Dental Crown Installation', 12000.00, 120),
+('Braces Installation (Metal)', 35000.00, 90),
+('Dental Implant', 45000.00, 120),
+('Oral Surgery Consultation', 1000.00, 30);
+
+-- Insert users (Admin, Staff, and Doctors)
+-- Password for all accounts: admin@2025
+INSERT INTO users (id, username, full_name, email, email_verified_at, password, role, is_suspended, suspended_at, suspension_reason, created_at) VALUES
+(1, 'admin', 'Administrator', 'admin@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'admin', 0, NULL, NULL, '2025-11-04 02:36:34'),
+(2, 'nitchelpau', 'Nitchel Paula Acosta', 'nitchel@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'doctor', 0, NULL, NULL, '2025-11-18 07:38:45'),
+(3, 'judith', 'Judith Hernandez', 'judith@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'doctor', 0, NULL, NULL, '2025-11-18 07:45:04'),
+(4, 'mylene', 'Mylene Arellano', 'mylene@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'doctor', 0, NULL, NULL, '2025-11-18 07:45:41'),
+(5, 'joanaruth', 'Joana Ruth Canunigo', 'joana@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'doctor', 0, NULL, NULL, '2025-11-18 07:47:06'),
+(6, 'cyred', 'Cyred Geneta', 'cyred@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'doctor', 0, NULL, NULL, '2025-11-18 07:48:15'),
+(7, 'vina', 'Vina Fernandez', 'vina@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'staff', 0, NULL, NULL, '2025-11-18 07:48:57'),
+(8, 'sofia', 'Sofia Masculino', 'sofia@dentalcare.com', NOW(), '$2a$10$6B5z5YHJZvYUqYQx.8rqkeJ7lVZ8Ck5fXqFJ5BmEzGKGZHx5qHhOC', 'staff', 0, NULL, NULL, '2025-11-18 07:49:36');
+
+-- Insert doctors linked to user accounts
+INSERT INTO doctors (id, user_id, name, specialty, email, created_at) VALUES
+(1, 2, 'Nitchel Paula Acosta', 'General Dentist', 'nitchel@dentalcare.com', '2025-11-18 07:38:45'),
+(2, 3, 'Judith Hernandez', 'Orthodontics', 'judith@dentalcare.com', '2025-11-18 07:45:04'),
+(3, 4, 'Mylene Arellano', 'Periodontics', 'mylene@dentalcare.com', '2025-11-18 07:45:41'),
+(4, 5, 'Joana Ruth Canunigo', 'Endodontics', 'joana@dentalcare.com', '2025-11-18 07:47:06'),
+(5, 6, 'Cyred Geneta', 'Prosthodontics', 'cyred@dentalcare.com', '2025-11-18 07:48:15');
+
+-- =====================================================
+-- NOTES
+-- =====================================================
+-- Admin Account
+-- Username/Email: admin or admin@dentalcare.com
+-- Password: admin@2025
+--
+-- All user accounts use the same password: admin@2025
+-- =====================================================
