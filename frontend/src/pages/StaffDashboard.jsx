@@ -161,7 +161,7 @@ const StaffDashboard = () => {
 
                     {/* Stats Cards */}
                     <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-                        {/* Total Patients Card */}
+{/* Total Patients Card */}
                         <div className="flex min-h-[20em] flex-col justify-between gap-[0.5em] rounded-[1.5em] bg-[#E0F2FE] p-[1.5em] text-[#0369A1] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.1)] transition hover:shadow-lg">
                             <div className="flex h-fit w-full items-start justify-between">
                                 <div className="flex flex-col items-start justify-center">
@@ -176,19 +176,34 @@ const StaffDashboard = () => {
                             <p className="text-[0.75rem] font-light text-sky-600">All registered patient accounts.</p>
                         </div>
 
-                        {/* Total Doctors Card */}
+                        {/* Total Staff Card */}
                         <div className="flex min-h-[20em] flex-col justify-between gap-[0.5em] rounded-[1.5em] bg-[#D1FAE5] p-[1.5em] text-[#047857] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.1)] transition hover:shadow-lg">
                             <div className="flex h-fit w-full items-start justify-between">
                                 <div className="flex flex-col items-start justify-center">
-                                    <p className="text-[1rem] font-semibold uppercase tracking-wider">Total Doctors</p>
-                                    <p className="text-[8em] font-extrabold mt-1">{stats.totalDoctors}</p>
+                                    <p className="text-[1rem] font-semibold uppercase tracking-wider">Total Staff</p>
+                                    <p className="text-[8em] font-extrabold mt-1">{stats.totalStaff}</p>
                                 </div>
                                 <div className="text-4xl opacity-80">
                                     <FaUserMd />
                                 </div>
                             </div>
                             <div className="h-[1px] w-full rounded-full bg-[hsla(158,90%,40%,0.2)]"></div>
-                            <p className="text-[0.75rem] font-light text-emerald-600">All registered doctor accounts.</p>
+                            <p className="text-[0.75rem] font-light text-emerald-600">All registered staff accounts.</p>
+                        </div>
+
+                        {/* Total Doctors Card */}
+                        <div className="flex min-h-[20em] flex-col justify-between gap-[0.5em] rounded-[1.5em] bg-[#FEF3C7] p-[1.5em] text-[#B45309] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.1)] transition hover:shadow-lg">
+                            <div className="flex h-fit w-full items-start justify-between">
+                                <div className="flex flex-col items-start justify-center">
+                                    <p className="text-[1rem] font-semibold uppercase tracking-wider">Total Doctors</p>
+                                    <p className="text-[8em] font-extrabold mt-1">{stats.totalDoctors}</p>
+                                </div>
+                                <div className="text-4xl opacity-80">
+                                    <FaCalendarAlt />
+                                </div>
+                            </div>
+                            <div className="h-[1px] w-full rounded-full bg-[hsla(39,90%,40%,0.2)]"></div>
+                            <p className="text-[0.75rem] font-light text-amber-700">All Doctor records.</p>
                         </div>
 
                         {/* Total Bookings Card */}
@@ -204,21 +219,6 @@ const StaffDashboard = () => {
                             </div>
                             <div className="h-[1px] w-full rounded-full bg-[hsla(39,90%,40%,0.2)]"></div>
                             <p className="text-[0.75rem] font-light text-amber-700">All appointment records.</p>
-                        </div>
-
-                        {/* Today's Appointments Card */}
-                        <div className="flex min-h-[20em] flex-col justify-between gap-[0.5em] rounded-[1.5em] bg-[#DBEAFE] p-[1.5em] text-[#1E40AF] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.1)] transition hover:shadow-lg">
-                            <div className="flex h-fit w-full items-start justify-between">
-                                <div className="flex flex-col items-start justify-center">
-                                    <p className="text-[1rem] font-semibold uppercase tracking-wider">Today's Appointments</p>
-                                    <p className="text-[8em] font-extrabold mt-1">{stats.todayAppointments}</p>
-                                </div>
-                                <div className="text-4xl opacity-80">
-                                    <FaCalendarDay />
-                                </div>
-                            </div>
-                            <div className="h-[1px] w-full rounded-full bg-[hsla(217,90%,50%,0.2)]"></div>
-                            <p className="text-[0.75rem] font-light text-blue-700">Appointments scheduled for today.</p>
                         </div>
                     </section>
 
@@ -254,6 +254,17 @@ const StaffDashboard = () => {
                                     <p className="text-3xl font-bold text-green-700 mt-1">{stats.confirmedAppointments}</p>
                                 </div>
                                 <FaCheckCircle className="text-2xl text-green-400" />
+                            </div>
+                        </div>
+
+                        {/* Today's Appointments */}
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-blue-600 font-medium">Today</p>
+                                    <p className="text-3xl font-bold text-blue-700 mt-1">{stats.todayAppointments}</p>
+                                </div>
+                                <FaCalendarDay className="text-2xl text-blue-400" />
                             </div>
                         </div>
 
@@ -325,14 +336,14 @@ const StaffDashboard = () => {
                                                 {!userData.is_suspended ? (
                                                     <button
                                                         onClick={() => openSuspendModal(userData)}
-                                                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                        className="text-red-500 px-4 py-2 rounded-lg  transition-colors"
                                                     >
                                                         Suspend
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleUnsuspend(userData.id)}
-                                                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                                                        className="text-green-500 px-4 py-2 rounded-lg transition-colors"
                                                     >
                                                         Unsuspend
                                                     </button>

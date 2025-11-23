@@ -257,7 +257,7 @@ const AdminDashboard = () => {
                 {/* Main Content */}
                 <main className="flex-1 p-6 sm:p-10 overflow-y-auto h-screen">
                     <header className="mb-10">
-                        <h1 className="text-8xl font-extrabold text-gray-900">Dashboard</h1>
+                        <h1 className="text-8xl font-extrabold text-gray-900">Admin Dashboard</h1>
                         <p className="text-lg text-gray-600 mt-1">Welcome back, {user?.first_name} {user?.last_name}. Here's a summary of your clinic.</p>
                     </header>
 
