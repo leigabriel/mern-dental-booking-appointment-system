@@ -34,6 +34,9 @@ module.exports = function (app) {
     // PUT /api/doctors/appointments/:id/decline - Decline appointment
     app.put('/api/doctors/appointments/:id/decline', [verifyToken, isDoctor], controller.declineAppointment);
 
+    // PUT /api/doctors/my-availability - Update logged-in doctor's availability
+    app.put('/api/doctors/my-availability', [verifyToken, isDoctor], controller.updateMyAvailability);
+
     // GET /api/doctors/with-users/all - Get all doctors with linked user accounts (admin and staff)
     app.get('/api/doctors/with-users/all', [verifyToken, isAdminOrStaff], controller.getAllDoctorsWithUsers);
 
@@ -56,6 +59,9 @@ module.exports = function (app) {
 
     // PUT /api/doctors/:id - Update doctor (admin and staff)
     app.put('/api/doctors/:id', [verifyToken, isAdminOrStaff], controller.updateDoctor);
+
+    // PUT /api/doctors/:id/availability - Update doctor availability (admin, staff, or the doctor themselves)
+    app.put('/api/doctors/:id/availability', [verifyToken, isAdminOrStaff], controller.updateAvailability);
 
     // DELETE /api/doctors/:id - Delete doctor (admin only)
     app.delete('/api/doctors/:id', [verifyToken, isAdmin], controller.deleteDoctor);

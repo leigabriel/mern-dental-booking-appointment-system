@@ -82,6 +82,19 @@ class Doctor {
         const [result] = await db.query('DELETE FROM doctors WHERE id = ?', [id]);
         return result.affectedRows;
     }
+
+    // Update doctor availability status
+    static async updateAvailability(id, isAvailable) {
+        const sql = 'UPDATE doctors SET is_available = ? WHERE id = ?';
+        const [result] = await db.query(sql, [isAvailable ? 1 : 0, id]);
+        return result.affectedRows;
+    }
+
+    // Get doctor availability status
+    static async getAvailability(id) {
+        const [rows] = await db.query('SELECT is_available FROM doctors WHERE id = ?', [id]);
+        return rows[0]?.is_available === 1;
+    }
 }
 
 module.exports = Doctor;

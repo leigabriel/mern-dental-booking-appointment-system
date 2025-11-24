@@ -471,3 +471,73 @@ exports.linkDoctorToUser = async (req, res) => {
         res.status(500).send({ message: err.message || 'Error linking doctor to user' });
     }
 };
+
+// Update doctor availability status
+// Can be accessed by: Admin, Staff, or the doctor themselves
+exports.updateAvailability = async (req, res) => {
+    const { is_available } = req.body;
+    const doctorId = req.params.id;
+
+    try {
+        console.log(`Updating availability for doctor ${doctorId} to ${is_available}`);
+        
+        // If the logged-in user is a doctor, verify they are updating their own profile
+        if (req.userRole === 'doctor') {
+            const doctor = await Doctor.findByUserId(req.userId);
+            if (!doctor || doctor.id !== parseInt(doctorId)) {
+                return res.status(403).send({ 
+                    message: 'You can only update your own availability status.' 
+                });
+            }
+        }
+
+        // Verify doctor exists
+        const doctor = await Doctor.findById(doctorId);
+        if (!doctor) {
+            return res.status(404).send({ message: 'Doctor not found.' });
+        }
+
+        // Update availability
+        const affectedRows = await Doctor.updateAvailability(doctorId, is_available);
+        
+        if (affectedRows === 0) {
+            return res.status(404).send({ message: 'Doctor not found or no changes made.' });
+        }
+
+        res.status(200).send({ 
+            message: `Doctor availability updated to ${is_available ? 'available' : 'unavailable'}`,
+            is_available 
+        });
+    } catch (err) {
+        console.error('Update availability error:', err);
+        res.status(500).send({ message: err.message || 'Error updating availability' });
+    }
+};
+
+// Update logged-in doctor's availability
+exports.updateMyAvailability = async (req, res) => {
+    const { is_available } = req.body;
+
+    try {
+        console.log(`Doctor ${req.userId} updating their own availability to ${is_available}`);
+        
+        // Get or create doctor profile
+        const doctor = await getOrCreateDoctorProfile(req.userId);
+        const doctorId = doctor.id;
+
+        // Update availability
+        const affectedRows = await Doctor.updateAvailability(doctorId, is_available);
+        
+        if (affectedRows === 0) {
+            return res.status(404).send({ message: 'Failed to update availability.' });
+        }
+
+        res.status(200).send({ 
+            message: `Your availability has been updated to ${is_available ? 'available' : 'unavailable'}`,
+            is_available 
+        });
+    } catch (err) {
+        console.error('Update my availability error:', err);
+        res.status(500).send({ message: err.message || 'Error updating availability' });
+    }
+};

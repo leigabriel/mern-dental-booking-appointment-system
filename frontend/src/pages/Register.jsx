@@ -192,7 +192,7 @@ const Register = () => {
                         </div>
 
                         {/* Role Selection */}
-                        <div>
+                        <div hidden>
                             <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                                 Select Role
                             </label>

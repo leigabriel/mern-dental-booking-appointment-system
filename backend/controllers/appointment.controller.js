@@ -279,16 +279,28 @@ exports.getAppointmentsJson = async (req, res) => {
         const appointments = await Appointment.getByMonth(month, year);
         
         // Format appointments for calendar display
-        const formattedAppointments = appointments.map(apt => ({
-            id: apt.id,
-            date: apt.appointment_date,
-            time: apt.appointment_time || apt.time_slot,
-            user: apt.patient_first_name,
-            doctor: apt.doctor_name,
-            service: apt.service_name,
-            status: apt.status,
-            payment_status: apt.payment_status
-        }));
+        const formattedAppointments = appointments.map(apt => {
+            // Format the date to YYYY-MM-DD
+            let formattedDate = apt.appointment_date;
+            if (apt.appointment_date instanceof Date) {
+                const d = apt.appointment_date;
+                formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            } else if (typeof apt.appointment_date === 'string') {
+                // If it's already a string, extract just the date part (YYYY-MM-DD)
+                formattedDate = apt.appointment_date.split('T')[0];
+            }
+            
+            return {
+                id: apt.id,
+                date: formattedDate,
+                time: apt.appointment_time || apt.time_slot,
+                user: apt.patient_first_name,
+                doctor: apt.doctor_name,
+                service: apt.service_name,
+                status: apt.status,
+                payment_status: apt.payment_status
+            };
+        });
 
         res.status(200).send({
             events: formattedAppointments,

@@ -197,9 +197,270 @@ const AdminReports = () => {
         navigate('/login');
     };
 
+    const generateCSV = (data, filename) => {
+        if (!data || data.length === 0) {
+            alert('No data available to export');
+            return;
+        }
+
+        // Get headers from the first object
+        const headers = Object.keys(data[0]);
+        
+        // Create CSV content
+        let csvContent = headers.join(',') + '\n';
+        
+        data.forEach(row => {
+            const values = headers.map(header => {
+                const value = row[header];
+                // Escape commas and quotes in values
+                if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            });
+            csvContent += values.join(',') + '\n';
+        });
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const generatePDF = (type) => {
+        // Create a printable version
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        
+        let content = '';
+        let title = '';
+        
+        if (type === 'appointments') {
+            title = 'Appointments Report';
+            content = `
+                <h2>Appointment Statistics</h2>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0;">
+                    <div style="border: 2px solid #3B82F6; padding: 15px; border-radius: 8px; background: #EFF6FF;">
+                        <p style="color: #1E40AF; font-size: 12px; margin: 0;">Confirmed</p>
+                        <h3 style="color: #1E3A8A; font-size: 24px; margin: 10px 0;">${appointmentsData.confirmed}</h3>
+                    </div>
+                    <div style="border: 2px solid #F59E0B; padding: 15px; border-radius: 8px; background: #FEF3C7;">
+                        <p style="color: #D97706; font-size: 12px; margin: 0;">Pending</p>
+                        <h3 style="color: #92400E; font-size: 24px; margin: 10px 0;">${appointmentsData.pending}</h3>
+                    </div>
+                    <div style="border: 2px solid #EF4444; padding: 15px; border-radius: 8px; background: #FEE2E2;">
+                        <p style="color: #DC2626; font-size: 12px; margin: 0;">Cancelled</p>
+                        <h3 style="color: #991B1B; font-size: 24px; margin: 10px 0;">${appointmentsData.cancelled}</h3>
+                    </div>
+                    <div style="border: 2px solid #6B7280; padding: 15px; border-radius: 8px; background: #F3F4F6;">
+                        <p style="color: #4B5563; font-size: 12px; margin: 0;">Declined</p>
+                        <h3 style="color: #1F2937; font-size: 24px; margin: 10px 0;">${appointmentsData.declined}</h3>
+                    </div>
+                </div>
+                <p style="margin-top: 20px;"><strong>Total Appointments:</strong> ${appointmentsData.total}</p>
+            `;
+        } else if (type === 'revenue') {
+            title = 'Revenue Report';
+            content = `
+                <h2>Revenue Statistics</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0;">
+                    <div style="border: 2px solid #10B981; padding: 15px; border-radius: 8px; background: #D1FAE5;">
+                        <p style="color: #059669; font-size: 12px; margin: 0;">Total Revenue</p>
+                        <h3 style="color: #065F46; font-size: 24px; margin: 10px 0;">₱${revenueData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
+                    </div>
+                    <div style="border: 2px solid #10B981; padding: 15px; border-radius: 8px; background: #A7F3D0;">
+                        <p style="color: #059669; font-size: 12px; margin: 0;">Paid</p>
+                        <h3 style="color: #065F46; font-size: 24px; margin: 10px 0;">₱${revenueData.paidRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
+                    </div>
+                    <div style="border: 2px solid #F59E0B; padding: 15px; border-radius: 8px; background: #FEF3C7;">
+                        <p style="color: #D97706; font-size: 12px; margin: 0;">Pending</p>
+                        <h3 style="color: #92400E; font-size: 24px; margin: 10px 0;">₱${revenueData.pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'doctors') {
+            title = 'Doctors Performance Report';
+            content = `
+                <h2>Doctor Statistics</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: #F3F4F6; border-bottom: 2px solid #E5E7EB;">
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: #6B7280;">Doctor</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: #6B7280;">Specialty</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; color: #6B7280;">Total</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; color: #6B7280;">Confirmed</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; color: #6B7280;">Pending</th>
+                            <th style="padding: 12px; text-align: right; font-size: 12px; color: #6B7280;">Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${doctorsData.map(doctor => `
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px; font-size: 14px; font-weight: 600;">${doctor.doctor_name}</td>
+                                <td style="padding: 12px; font-size: 14px; color: #6B7280;">${doctor.specialty}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600;">${doctor.total_appointments}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; color: #10B981;">${doctor.confirmed}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; color: #F59E0B;">${doctor.pending}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: 600;">₱${doctor.revenue_generated.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else if (type === 'services') {
+            title = 'Services Report';
+            content = `
+                <h2>Service Statistics</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background: #F3F4F6; border-bottom: 2px solid #E5E7EB;">
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: #6B7280;">Service</th>
+                            <th style="padding: 12px; text-align: right; font-size: 12px; color: #6B7280;">Price</th>
+                            <th style="padding: 12px; text-align: center; font-size: 12px; color: #6B7280;">Bookings</th>
+                            <th style="padding: 12px; text-align: right; font-size: 12px; color: #6B7280;">Total Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${servicesData.map(service => `
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px; font-size: 14px; font-weight: 600;">${service.service_name}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; color: #6B7280;">₱${service.base_price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 14px; font-weight: 600;">${service.times_booked}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: 600; color: #10B981;">₱${service.total_revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { 
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                        padding: 40px; 
+                        background: white;
+                    }
+                    h1 { 
+                        color: #1F2937; 
+                        margin-bottom: 10px;
+                        font-size: 28px;
+                    }
+                    h2 {
+                        color: #374151;
+                        margin: 30px 0 15px 0;
+                        font-size: 20px;
+                    }
+                    .header { 
+                        border-bottom: 3px solid #3B82F6; 
+                        padding-bottom: 20px; 
+                        margin-bottom: 30px;
+                    }
+                    .date-range {
+                        color: #6B7280;
+                        font-size: 14px;
+                        margin-top: 5px;
+                    }
+                    table {
+                        page-break-inside: auto;
+                    }
+                    tr {
+                        page-break-inside: avoid;
+                        page-break-after: auto;
+                    }
+                    @media print {
+                        .print-button { display: none; }
+                    }
+                    .print-button {
+                        margin-top: 30px;
+                        padding: 12px 24px;
+                        background: #3B82F6;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    }
+                    .print-button:hover {
+                        background: #2563EB;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${title}</h1>
+                    <div class="date-range">Date Range: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}</div>
+                    <div class="date-range">Generated on: ${new Date().toLocaleString()}</div>
+                </div>
+                ${content}
+                <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+    };
+
     const handleExport = (type, format) => {
-        // This would connect to backend export endpoints
-        alert(`Export ${type} as ${format} - Feature coming soon!`);
+        if (format === 'csv') {
+            let data = [];
+            let filename = '';
+
+            if (type === 'appointments') {
+                filename = 'appointments_report';
+                data = [
+                    { Status: 'Confirmed', Count: appointmentsData.confirmed },
+                    { Status: 'Pending', Count: appointmentsData.pending },
+                    { Status: 'Cancelled', Count: appointmentsData.cancelled },
+                    { Status: 'Declined', Count: appointmentsData.declined },
+                    { Status: 'Total', Count: appointmentsData.total }
+                ];
+            } else if (type === 'revenue') {
+                filename = 'revenue_report';
+                data = [
+                    { Category: 'Total Revenue', Amount: revenueData.totalRevenue.toFixed(2) },
+                    { Category: 'Paid Revenue', Amount: revenueData.paidRevenue.toFixed(2) },
+                    { Category: 'Pending Revenue', Amount: revenueData.pendingRevenue.toFixed(2) }
+                ];
+            } else if (type === 'doctors') {
+                filename = 'doctors_performance';
+                data = doctorsData.map(doctor => ({
+                    Doctor: doctor.doctor_name,
+                    Specialty: doctor.specialty,
+                    'Total Appointments': doctor.total_appointments,
+                    Confirmed: doctor.confirmed,
+                    Pending: doctor.pending,
+                    'Revenue Generated': doctor.revenue_generated.toFixed(2)
+                }));
+            } else if (type === 'services') {
+                filename = 'services_report';
+                data = servicesData.map(service => ({
+                    Service: service.service_name,
+                    'Base Price': service.base_price.toFixed(2),
+                    'Times Booked': service.times_booked,
+                    'Total Revenue': service.total_revenue.toFixed(2)
+                }));
+            }
+
+            generateCSV(data, filename);
+        } else if (format === 'pdf') {
+            generatePDF(type);
+        }
     };
 
     // Chart data

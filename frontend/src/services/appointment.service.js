@@ -58,6 +58,12 @@ const appointmentService = {
         });
         return response.data;
     },
+
+    // Clear appointment history (delete pending, cancelled, declined)
+    clearHistory: async () => {
+        const response = await api.delete('/appointments/clear-history');
+        return response.data;
+    },
 };
 
 export default appointmentService;

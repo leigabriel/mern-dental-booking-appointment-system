@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import appointmentService from '../services/appointment.service';
@@ -19,6 +19,9 @@ const Profile = () => {
     const [showClearHistoryModal, setShowClearHistoryModal] = useState(false);
     const [declineMessage, setDeclineMessage] = useState('');
     const [showDeclineModal, setShowDeclineModal] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+    const receiptRef = useRef(null);
 
     // Redirect if admin or staff
     if (user && (user.role === 'admin' || user.role === 'staff')) {
@@ -75,20 +78,8 @@ const Profile = () => {
 
     const handleClearHistory = async () => {
         try {
-            // Filter out confirmed appointments and cancel the rest
-            const historyIds = appointments
-                .filter(app => app.status !== 'confirmed')
-                .map(app => app.id);
-
-            if (historyIds.length === 0) {
-                setMessage('No history to clear. Only non-confirmed appointments can be removed.');
-                setShowClearHistoryModal(false);
-                return;
-            }
-
-            // Cancel each appointment
-            await Promise.all(historyIds.map(id => appointmentService.cancel(id)));
-            setMessage('Appointment history cleared successfully!');
+            const result = await appointmentService.clearHistory();
+            setMessage(result.message || 'Appointment history cleared successfully!');
             setShowClearHistoryModal(false);
             loadData();
         } catch (error) {
@@ -105,6 +96,178 @@ const Profile = () => {
     const openDeclineModal = (msg) => {
         setDeclineMessage(msg);
         setShowDeclineModal(true);
+    };
+
+    const openAppointmentModal = (app) => {
+        setSelectedAppointment(app);
+        setShowAppointmentModal(true);
+    };
+
+    const handleDownloadReceipt = async (app) => {
+        try {
+            // Create canvas from the receipt element
+            const receiptElement = receiptRef.current;
+            if (!receiptElement) return;
+
+            // Use html2canvas alternative - create SVG and convert to image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 600;
+            canvas.height = 800;
+            
+            // Fill background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw header gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+            gradient.addColorStop(0, '#10b981');
+            gradient.addColorStop(1, '#059669');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, 150);
+            
+            // Draw title
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('DENTALCARE', canvas.width / 2, 60);
+            
+            ctx.font = '14px Arial';
+            ctx.fillText('Appointment Confirmation Receipt', canvas.width / 2, 90);
+            
+            // Draw content
+            ctx.fillStyle = '#1f2937';
+            ctx.textAlign = 'left';
+            ctx.font = '11px Arial';
+            
+            let yPos = 180;
+            const leftMargin = 50;
+            
+            // Appointment ID
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('APPOINTMENT ID', canvas.width / 2 - 100, yPos);
+            ctx.font = 'bold 24px Courier New';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(`#${String(app.id).padStart(6, '0')}`, canvas.width / 2 - 60, yPos + 30);
+            
+            yPos += 70;
+            ctx.font = '11px Arial';
+            
+            // Patient Name
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('PATIENT NAME', leftMargin, yPos);
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(profile?.name || 'N/A', leftMargin, yPos + 20);
+            
+            yPos += 50;
+            ctx.font = '11px Arial';
+            
+            // Doctor
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('DOCTOR', leftMargin, yPos);
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(app.doctor_name || 'N/A', leftMargin, yPos + 20);
+            ctx.font = '13px Arial';
+            ctx.fillStyle = '#6366f1';
+            ctx.fillText('Dental Specialist', leftMargin, yPos + 40);
+            
+            yPos += 70;
+            ctx.font = '11px Arial';
+            
+            // Service
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('SERVICE', leftMargin, yPos);
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(app.service_name || 'N/A', leftMargin, yPos + 20);
+            
+            yPos += 50;
+            ctx.font = '11px Arial';
+            
+            // Date
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('APPOINTMENT DATE', leftMargin, yPos);
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#1f2937';
+            const dateStr = new Date(app.appointment_date).toLocaleDateString('en-US', { 
+                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
+            });
+            ctx.fillText(dateStr, leftMargin, yPos + 20);
+            
+            yPos += 50;
+            ctx.font = '11px Arial';
+            
+            // Time
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('APPOINTMENT TIME', leftMargin, yPos);
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(app.appointment_time, leftMargin, yPos + 20);
+            
+            yPos += 50;
+            ctx.font = '11px Arial';
+            
+            // Status
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('STATUS', leftMargin, yPos);
+            ctx.fillStyle = '#065f46';
+            ctx.fillRect(leftMargin, yPos + 10, 120, 30);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('✓ CONFIRMED', leftMargin + 10, yPos + 30);
+            
+            yPos += 60;
+            ctx.font = '11px Arial';
+            
+            // Payment Method
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('PAYMENT METHOD', leftMargin, yPos);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(app.payment_method ? app.payment_method.toUpperCase() : 'CLINIC', leftMargin, yPos + 20);
+            
+            yPos += 50;
+            ctx.font = '11px Arial';
+            
+            // Payment Status
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('PAYMENT STATUS', leftMargin, yPos);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(app.payment_status ? app.payment_status.toUpperCase() : 'PENDING', leftMargin, yPos + 20);
+            
+            // Footer
+            yPos += 60;
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#6b7280';
+            ctx.textAlign = 'center';
+            ctx.fillText('Please arrive 10 minutes before your scheduled appointment.', canvas.width / 2, yPos);
+            ctx.fillText('For questions or to reschedule, please contact us in advance.', canvas.width / 2, yPos + 20);
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#10b981';
+            ctx.fillText('Thank you for choosing DentalCare!', canvas.width / 2, yPos + 50);
+            
+            // Convert canvas to blob and download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Receipt_${String(app.id).padStart(6, '0')}_${new Date().toISOString().split('T')[0]}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                setMessage('Receipt downloaded successfully!');
+            });
+        } catch (error) {
+            console.error('Error downloading receipt:', error);
+            setMessage('Error downloading receipt. Please try again.');
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -190,6 +353,9 @@ const Profile = () => {
 
     return (
         <div className="relative isolate bg-blue-950 flex items-center justify-center min-h-screen p-6 sm:p-10 text-slate-800">
+            {/* Hidden receipt reference for canvas rendering */}
+            <div ref={receiptRef} style={{ position: 'absolute', left: '-9999px' }} />
+            
             {/* Background Blurs */}
             <div aria-hidden="true" className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
                 <div style={{ clipPath: "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" }} className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
@@ -307,7 +473,7 @@ const Profile = () => {
                             )}
                         </aside>
 
-                        {/* RIGHT: CONFIRMED APPOINTMENTS RECEIPT CARDS */}
+                        {/* RIGHT: CONFIRMED APPOINTMENTS LIST */}
                         <section className="col-span-2 bg-white border rounded-2xl shadow-sm p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <div>
@@ -325,100 +491,35 @@ const Profile = () => {
                             </div>
 
                             {confirmedAppointments.length > 0 ? (
-                                <div className="grid gap-4 md:grid-cols-2 max-h-[600px] overflow-y-auto pr-2">
+                                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                                     {confirmedAppointments.map((app) => (
-                                        <div key={app.id} className="relative bg-gradient-to-br from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-                                            {/* Receipt Header */}
-                                            <div className="bg-emerald-600 text-white p-4 relative">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <h3 className="text-lg font-bold">DENTALCARE</h3>
-                                                        <p className="text-xs text-emerald-100">Appointment Receipt</p>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1 items-end">
-                                                        <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                                                            <span className="text-xs font-bold">CONFIRMED</span>
-                                                        </div>
-                                                        <div className="bg-blue-500/30 text-blue-100 backdrop-blur-sm px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                                                            <span className="font-semibold">{app.payment_method || 'Clinic'}</span>
-                                                        </div>
-                                                    </div>
+                                        <div 
+                                            key={app.id} 
+                                            onClick={() => openAppointmentModal(app)}
+                                            className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-blue-50 border-l-4 border-emerald-600 rounded-lg hover:shadow-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                                        >
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold shadow-md">
+                                                    {new Date(app.appointment_date).getDate()}
                                                 </div>
-                                                {/* Dotted tear line */}
-                                                <div className="absolute bottom-0 left-0 right-0 h-4 bg-white" style={{
-                                                    backgroundImage: 'radial-gradient(circle at 10px -5px, transparent 12px, white 13px)',
-                                                    backgroundSize: '20px 20px',
-                                                    backgroundRepeat: 'repeat-x'
-                                                }}></div>
-                                            </div>
-
-                                            {/* Receipt Body */}
-                                            <div className="p-5 space-y-4">
-                                                {/* Appointment ID */}
-                                                <div className="text-center pb-3 border-b border-dashed border-slate-300">
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wider">Appointment ID</p>
-                                                    <p className="text-lg font-mono font-bold text-slate-900">#{String(app.id).padStart(6, '0')}</p>
-                                                </div>
-
-                                                {/* Doctor Info */}
-                                                <div className="flex items-start gap-3">
-                                                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                                                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-xs text-slate-500 uppercase tracking-wider">Doctor</p>
-                                                        <p className="text-base font-bold text-slate-900">{app.doctor_name || 'N/A'}</p>
-                                                        <p className="text-xs text-indigo-600 font-semibold">Dental Specialist</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Service Info */}
-                                                <div className="bg-white rounded-lg p-3 border border-slate-200">
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Service</p>
-                                                    <p className="text-sm font-bold text-slate-900">{app.service_name || 'N/A'}</p>
-                                                    <div className="flex items-center justify-between mt-2 text-xs text-slate-600">
-                                                        <span className="flex items-center gap-1">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            45 mins
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-slate-900 text-base">{app.service_name}</h3>
+                                                    <p className="text-sm text-slate-600">Dr. {app.doctor_name}</p>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <span className="text-xs text-slate-500">
+                                                            {new Date(app.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </span>
+                                                        <span className="text-xs text-slate-500">•</span>
+                                                        <span className="text-xs font-semibold text-emerald-600">{app.appointment_time}</span>
                                                     </div>
-                                                </div>
-
-                                                {/* Date & Time */}
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Date</p>
-                                                        <p className="text-xs font-bold text-slate-900">{new Date(app.appointment_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                                                    </div>
-                                                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Time</p>
-                                                        <p className="text-xs font-bold text-slate-900">{app.appointment_time}</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Footer Note */}
-                                                <div className="pt-3 border-t border-dashed border-slate-300">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <div className="text-xs text-slate-500">
-                                                            <p className="font-semibold">Payment Status:</p>
-                                                            {getPaymentStatusBadge(app.payment_status || 'pending')}
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-xs text-slate-500 text-center">Please arrive 10 minutes early</p>
-                                                    <p className="text-xs text-emerald-600 font-semibold mt-1 text-center">✓ Confirmed & Ready</p>
                                                 </div>
                                             </div>
-
-                                            {/* Receipt Bottom Tear */}
-                                            <div className="h-4 bg-emerald-50" style={{
-                                                backgroundImage: 'radial-gradient(circle at 10px 9px, transparent 12px, #ecfdf5 13px)',
-                                                backgroundSize: '20px 20px',
-                                                backgroundRepeat: 'repeat-x'
-                                            }}></div>
+                                            <div className="flex items-center gap-2">
+                                                {getPaymentStatusBadge(app.payment_status || 'pending')}
+                                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -526,6 +627,122 @@ const Profile = () => {
             <div aria-hidden="true" className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
                 <div style={{ clipPath: "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" }} className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[50.1875rem]"></div>
             </div>
+
+            {/* Appointment Detail Modal */}
+            {showAppointmentModal && selectedAppointment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAppointmentModal(false)}>
+                    <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-6">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="text-2xl font-bold">DENTALCARE</h3>
+                                    <p className="text-sm text-emerald-100">Appointment Details</p>
+                                </div>
+                                <button onClick={() => setShowAppointmentModal(false)} className="text-white hover:text-emerald-100">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                            {/* Appointment ID */}
+                            <div className="text-center pb-4 border-b border-dashed">
+                                <p className="text-xs text-slate-500 uppercase tracking-wider">Appointment ID</p>
+                                <p className="text-2xl font-mono font-bold text-slate-900 mt-1">#{String(selectedAppointment.id).padStart(6, '0')}</p>
+                            </div>
+
+                            {/* Patient Info */}
+                            <div>
+                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Patient Name</p>
+                                <p className="text-lg font-bold text-slate-900">{profile?.name || 'N/A'}</p>
+                            </div>
+
+                            {/* Doctor Info */}
+                            <div className="bg-slate-50 rounded-lg p-4">
+                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Doctor</p>
+                                <p className="text-lg font-bold text-slate-900">{selectedAppointment.doctor_name || 'N/A'}</p>
+                                <p className="text-sm text-indigo-600 font-semibold">Dental Specialist</p>
+                            </div>
+
+                            {/* Service Info */}
+                            <div className="bg-slate-50 rounded-lg p-4">
+                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Service</p>
+                                <p className="text-lg font-bold text-slate-900">{selectedAppointment.service_name || 'N/A'}</p>
+                            </div>
+
+                            {/* Date & Time */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Date</p>
+                                    <p className="text-sm font-bold text-slate-900">
+                                        {new Date(selectedAppointment.appointment_date).toLocaleDateString('en-US', { 
+                                            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' 
+                                        })}
+                                    </p>
+                                </div>
+                                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Time</p>
+                                    <p className="text-sm font-bold text-slate-900">{selectedAppointment.appointment_time}</p>
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div>
+                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Status</p>
+                                <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold">
+                                    ✓ CONFIRMED
+                                </span>
+                            </div>
+
+                            {/* Payment Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Payment Method</p>
+                                    <p className="text-base font-bold text-slate-900">
+                                        {selectedAppointment.payment_method ? selectedAppointment.payment_method.toUpperCase() : 'CLINIC'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Payment Status</p>
+                                    {getPaymentStatusBadge(selectedAppointment.payment_status || 'pending')}
+                                </div>
+                            </div>
+
+                            {/* Note */}
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center">
+                                <p className="text-sm text-slate-600">Please arrive 10 minutes before your scheduled appointment.</p>
+                                <p className="text-sm text-emerald-600 font-semibold mt-2">✓ Confirmed & Ready</p>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 bg-slate-50 border-t flex gap-3">
+                            <button
+                                onClick={() => setShowAppointmentModal(false)}
+                                className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-semibold transition"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleDownloadReceipt(selectedAppointment);
+                                    setShowAppointmentModal(false);
+                                }}
+                                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Download Receipt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Clear All History Modal */}
             {showClearHistoryModal && (

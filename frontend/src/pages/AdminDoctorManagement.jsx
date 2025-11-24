@@ -240,13 +240,14 @@ const AdminDoctorManagement = () => {
                                             <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialty</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {loading ? (
                                             <tr>
-                                                <td colSpan="6" className="px-3 py-4 text-center text-gray-500">
+                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">
                                                     Loading doctors...
                                                 </td>
                                             </tr>
@@ -270,6 +271,36 @@ const AdminDoctorManagement = () => {
                                                             </span>
                                                         )}
                                                     </td>
+                                                    <td className="px-3 py-4 text-sm">
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const newStatus = doctor.is_available === 0;
+                                                                    await doctorService.updateAvailability(doctor.id, newStatus);
+                                                                    setMessage({ 
+                                                                        type: 'success', 
+                                                                        text: `Doctor availability updated to ${newStatus ? 'Available' : 'Unavailable'}` 
+                                                                    });
+                                                                    loadDoctors();
+                                                                    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                                                                } catch (error) {
+                                                                    setMessage({ 
+                                                                        type: 'error', 
+                                                                        text: error.response?.data?.message || 'Failed to update availability' 
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                                                                doctor.is_available !== 0 ? 'bg-green-600' : 'bg-gray-300'
+                                                            }`}
+                                                        >
+                                                            <span
+                                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                                    doctor.is_available !== 0 ? 'translate-x-7' : 'translate-x-1'
+                                                                }`}
+                                                            />
+                                                        </button>
+                                                    </td>
                                                     <td className="px-3 py-4 text-sm space-x-2 whitespace-nowrap">
                                                         <button
                                                             className="text-blue-600 hover:text-blue-800 font-medium"
@@ -289,7 +320,7 @@ const AdminDoctorManagement = () => {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="6" className="px-3 py-4 text-center text-gray-500">
+                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">
                                                     No doctors found.
                                                 </td>
                                             </tr>

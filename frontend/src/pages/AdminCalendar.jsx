@@ -115,11 +115,19 @@ const AdminCalendar = () => {
         const dateStr = formatDate(date);
         
         const dayAppointments = events.filter(event => {
-            // Handle both date formats - the API returns 'date' field
+            // The API returns appointments with 'date' field from formatted response
+            // Match against the formatted date string
             const eventDate = event.date;
+            
+            // Debug log
+            if (events.length > 0 && date.getDate() === new Date().getDate()) {
+                console.log('Comparing:', { eventDate, dateStr, matches: eventDate === dateStr });
+            }
+            
             return eventDate === dateStr;
         });
         
+        console.log(`Found ${dayAppointments.length} appointments for ${dateStr}`);
         return dayAppointments;
     };
 

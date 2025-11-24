@@ -27,7 +27,8 @@ const DoctorDashboard = () => {
     const [profileData, setProfileData] = useState({
         name: '',
         specialty: '',
-        email: ''
+        email: '',
+        is_available: true
     });
 
     useEffect(() => {
@@ -110,7 +111,8 @@ const DoctorDashboard = () => {
             setProfileData({
                 name: res.data.name || '',
                 specialty: res.data.specialty || '',
-                email: res.data.email || ''
+                email: res.data.email || '',
+                is_available: res.data.is_available !== 0
             });
             
             console.log('Profile data set successfully');
@@ -221,6 +223,23 @@ const DoctorDashboard = () => {
         navigate('/login');
     };
 
+    const handleAvailabilityToggle = async () => {
+        try {
+            const newStatus = !profileData.is_available;
+            await api.put('/doctors/my-availability', { 
+                is_available: newStatus 
+            });
+            setProfileData({ ...profileData, is_available: newStatus });
+            setMessage({ 
+                type: 'success', 
+                text: `Availability updated to ${newStatus ? 'Available' : 'Unavailable'}` 
+            });
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message;
+            setMessage({ type: 'error', text: `Error: ${errorMessage}` });
+        }
+    };
+
     const getStatusBadge = (status) => {
         const badges = {
             pending: 'bg-yellow-100 text-yellow-800',
@@ -284,6 +303,46 @@ const DoctorDashboard = () => {
                         <span className="ml-2">{message.text}</span>
                     </div>
                 )}
+
+                {/* Availability Toggle */}
+                <section className="bg-white p-6 rounded-lg shadow mb-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Availability Status</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                                Set your availability status for patients booking appointments
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleAvailabilityToggle}
+                            className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                profileData.is_available 
+                                    ? 'bg-green-600 focus:ring-green-500' 
+                                    : 'bg-gray-300 focus:ring-gray-400'
+                            }`}
+                        >
+                            <span
+                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                                    profileData.is_available ? 'translate-x-9' : 'translate-x-1'
+                                }`}
+                            />
+                        </button>
+                    </div>
+                    <div className="mt-3">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                            profileData.is_available 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                        }`}>
+                            {profileData.is_available ? '✓ Available' : '✗ Unavailable'}
+                        </span>
+                        <span className="ml-3 text-sm text-gray-600">
+                            {profileData.is_available 
+                                ? 'Patients can book appointments with you' 
+                                : 'Patients cannot book appointments with you'}
+                        </span>
+                    </div>
+                </section>
 
                 {/* Stats Cards */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">

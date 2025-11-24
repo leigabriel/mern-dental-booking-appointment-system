@@ -30,6 +30,22 @@ const doctorService = {
         const response = await api.delete(`/doctors/${id}`);
         return response.data;
     },
+
+    // Update doctor availability (admin, staff, or doctor)
+    updateAvailability: async (id, isAvailable) => {
+        const response = await api.put(`/doctors/${id}/availability`, { 
+            is_available: isAvailable 
+        });
+        return response.data;
+    },
+
+    // Update logged-in doctor's availability
+    updateMyAvailability: async (isAvailable) => {
+        const response = await api.put('/doctors/my-availability', { 
+            is_available: isAvailable 
+        });
+        return response.data;
+    },
 };
 
 export default doctorService;

@@ -592,40 +592,70 @@ const BookAppointment = () => {
                                     ref={doctorScrollRef}
                                     className="flex gap-4 overflow-x-auto scroll-smooth px-1 no-scrollbar snap-x snap-mandatory"
                                 >
-                                    {doctors.map((doctor) => (
-                                        <div
-                                            key={doctor.id}
-                                            onClick={() => setSelectedDoctor(doctor.id)}
-                                            className={`selection-card flex-shrink-0 w-80 p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 snap-start ${selectedDoctor === doctor.id
-                                                    ? 'selected border-indigo-500 bg-indigo-50'
-                                                    : 'border-white/20 bg-blue-900/40 hover:border-indigo-300'
+                                    {doctors.map((doctor) => {
+                                        const isAvailable = doctor.is_available !== 0;
+                                        const isDisabled = !isAvailable;
+                                        
+                                        return (
+                                            <div
+                                                key={doctor.id}
+                                                onClick={() => isAvailable && setSelectedDoctor(doctor.id)}
+                                                className={`selection-card flex-shrink-0 w-80 p-5 rounded-xl border-2 transition-all duration-300 snap-start ${
+                                                    isDisabled 
+                                                        ? 'border-gray-400 bg-gray-200 cursor-not-allowed opacity-60' 
+                                                        : selectedDoctor === doctor.id
+                                                            ? 'selected border-indigo-500 bg-indigo-50 cursor-pointer'
+                                                            : 'border-white/20 bg-blue-900/40 hover:border-indigo-300 cursor-pointer'
                                                 }`}
-                                        >
-                                            <div className="check-icon">
-                                                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            <div className="flex items-start gap-4">
-                                                <div className="flex-shrink-0">
-                                                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl ring-4 ring-blue-500/20">
-                                                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                            >
+                                                {isAvailable && (
+                                                    <div className="check-icon">
+                                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
                                                     </div>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xl font-bold text-gray-900 mb-1">Dr. {doctor.name}</h4>
-                                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 border border-indigo-200">
-                                                        <svg className="w-4 h-4 mr-2 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        <span className="text-sm font-semibold text-indigo-900">{doctor.specialty || 'General Dentist'}</span>
+                                                )}
+                                                <div className="flex items-start gap-4">
+                                                    <div className="flex-shrink-0">
+                                                        <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl ring-4 ${
+                                                            isDisabled 
+                                                                ? 'bg-gradient-to-br from-gray-400 to-gray-500 ring-gray-300/20' 
+                                                                : 'bg-gradient-to-br from-blue-500 to-indigo-600 ring-blue-500/20'
+                                                        }`}>
+                                                            <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className={`text-xl font-bold mb-1 ${isDisabled ? 'text-gray-600' : 'text-gray-900'}`}>
+                                                            Dr. {doctor.name}
+                                                        </h4>
+                                                        <div className={`inline-flex items-center px-3 py-1 rounded-full border ${
+                                                            isDisabled 
+                                                                ? 'bg-gray-300 border-gray-400' 
+                                                                : 'bg-indigo-100 border-indigo-200'
+                                                        }`}>
+                                                            <svg className={`w-4 h-4 mr-2 ${isDisabled ? 'text-gray-600' : 'text-indigo-700'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span className={`text-sm font-semibold ${isDisabled ? 'text-gray-700' : 'text-indigo-900'}`}>
+                                                                {doctor.specialty || 'General Dentist'}
+                                                            </span>
+                                                        </div>
+                                                        {isDisabled && (
+                                                            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-red-100 border border-red-300">
+                                                                <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <span className="text-sm font-semibold text-red-700">Not Available Today</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                                 <button
                                     type="button"

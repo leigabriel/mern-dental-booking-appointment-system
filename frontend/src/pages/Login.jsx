@@ -197,10 +197,10 @@ const Login = () => {
                             <label className="flex items-center space-x-2">
                                 <input
                                     type="checkbox"
-                                    checked={agreedToTerms}
                                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                                     className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                                     required
+                                    checked
                                 />
                                 <span className="text-gray-600">
                                     I agree to the{" "}
