@@ -321,6 +321,14 @@ const Profile = () => {
                     Paid
                 </span>
             ),
+            refunded: (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9h2v4h-2V9zM9 7h2v1H9V7z" clipRule="evenodd" />
+                    </svg>
+                    Refunded
+                </span>
+            ),
             unpaid: (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

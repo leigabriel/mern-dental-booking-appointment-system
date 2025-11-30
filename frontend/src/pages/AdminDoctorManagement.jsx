@@ -38,7 +38,7 @@ const AdminDoctorManagement = () => {
             const data = await doctorService.getAll();
             console.log('Doctors loaded:', data);
             setDoctors(Array.isArray(data) ? data : []);
-            setMessage({ type: '', text: '' }); // Clear any previous errors
+            // preserve any existing message (don't clear here so success messages can persist)
         } catch (error) {
             console.error('Error loading doctors:', error);
             console.error('Error response:', error.response);
@@ -272,34 +272,34 @@ const AdminDoctorManagement = () => {
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-4 text-sm">
-                                                        <button
+                                                        <span
+                                                            role="button"
                                                             onClick={async () => {
                                                                 try {
+                                                                    // Toggle availability (if is_available is 0 => become available)
                                                                     const newStatus = doctor.is_available === 0;
                                                                     await doctorService.updateAvailability(doctor.id, newStatus);
-                                                                    setMessage({ 
-                                                                        type: 'success', 
-                                                                        text: `Doctor availability updated to ${newStatus ? 'Available' : 'Unavailable'}` 
+                                                                    setMessage({
+                                                                        type: 'success',
+                                                                        text: `Doctor availability updated to ${newStatus ? 'Available' : 'Unavailable'}`
                                                                     });
-                                                                    loadDoctors();
+                                                                    // Refresh list but preserve current message (loadDoctors no longer clears messages)
+                                                                    await loadDoctors();
+                                                                    // Auto-clear message after a short delay
                                                                     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
                                                                 } catch (error) {
-                                                                    setMessage({ 
-                                                                        type: 'error', 
-                                                                        text: error.response?.data?.message || 'Failed to update availability' 
+                                                                    setMessage({
+                                                                        type: 'error',
+                                                                        text: error.response?.data?.message || 'Failed to update availability'
                                                                     });
                                                                 }
                                                             }}
-                                                            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                                                                doctor.is_available !== 0 ? 'bg-green-600' : 'bg-gray-300'
+                                                            className={`cursor-pointer inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                                                                doctor.is_available !== 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                                             }`}
                                                         >
-                                                            <span
-                                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                                    doctor.is_available !== 0 ? 'translate-x-7' : 'translate-x-1'
-                                                                }`}
-                                                            />
-                                                        </button>
+                                                            {doctor.is_available !== 0 ? 'Available' : 'Unavailable'}
+                                                        </span>
                                                     </td>
                                                     <td className="px-3 py-4 text-sm space-x-2 whitespace-nowrap">
                                                         <button

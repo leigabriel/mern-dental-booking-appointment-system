@@ -13,6 +13,7 @@ const AdminAppointments = () => {
     const [appointments, setAppointments] = useState([]);
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [showMarkPaidModal, setShowMarkPaidModal] = useState(false);
+    const [showRefundModal, setShowRefundModal] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [declineMessage, setDeclineMessage] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -27,6 +28,7 @@ const AdminAppointments = () => {
         try {
             setLoading(true);
             const response = await api.get('/appointments/all');
+            console.log('Fetched appointments:', response.data);
             setAppointments(response.data);
         } catch (error) {
             console.error('Error fetching appointments:', error);
@@ -97,6 +99,32 @@ const AdminAppointments = () => {
     const closeMarkPaidModal = () => {
         setShowMarkPaidModal(false);
         setSelectedAppointment(null);
+    };
+
+    const openRefundModal = (appointment) => {
+        setSelectedAppointment(appointment);
+        setShowRefundModal(true);
+    };
+
+    const closeRefundModal = () => {
+        setShowRefundModal(false);
+        setSelectedAppointment(null);
+    };
+
+    const handleRefund = async () => {
+        try {
+            // Call payment update endpoint to mark refunded
+            await api.put(`/appointments/${selectedAppointment.id}/payment`, {
+                payment_status: 'refunded',
+                payment_reference: `refund-${selectedAppointment.id}`
+            });
+            setMessage({ type: 'success', text: 'Payment marked as refunded successfully!' });
+            closeRefundModal();
+            fetchAppointments();
+        } catch (error) {
+            console.error('Refund error:', error);
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to refund payment' });
+        }
     };
 
     const handleMarkAsPaid = async () => {
@@ -241,14 +269,34 @@ const AdminAppointments = () => {
                                                         </div>
                                                     )}
 
-                                                    {/* Mark as Paid Button */}
-                                                    {app.payment_method === 'clinic' && app.payment_status !== 'paid' && app.status !== 'cancelled' && (
+                                                    {/* Mark as Paid Button or Text */}
+                                                    {app.payment_method === 'clinic' && (
                                                         <div className="mt-2">
-                                                            <button onClick={() => openMarkPaidModal(app)} className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold transition-colors">
-                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                                </svg>
-                                                                Mark as Paid
+                                                            {(app.payment_status === 'paid' || app.payment_status === 'refunded') ? (
+                                                                // Show plain text for already-paid or refunded payments
+                                                                <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold ${app.payment_status === 'paid' ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-700'}`}>
+                                                                    {app.payment_status === 'paid' ? 'Payment Received' : 'Refunded'}
+                                                                    {/* If appointment is cancelled and payment was paid, show Refund action */}
+                                                                    {/* refund action for cancelled paid appointments moved below to support all payment methods */}
+                                                                </div>
+                                                            ) : app.status === 'cancelled' ? (
+                                                                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-600">N/A</div>
+                                                            ) : (
+                                                                // Only show Mark as Paid for unpaid/pending clinic payments on non-cancelled appointments
+                                                                <button onClick={() => openMarkPaidModal(app)} className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold transition-colors">
+                                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                    Mark as Paid
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    {/* Show Refund button for any payment method when appointment is paid and cancelled */}
+                                                    {app.payment_status === 'paid' && app.status === 'cancelled' && (
+                                                        <div className="mt-2">
+                                                            <button onClick={() => openRefundModal(app)} className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-semibold hover:bg-yellow-200">
+                                                                Refund
                                                             </button>
                                                         </div>
                                                     )}
@@ -355,6 +403,33 @@ const AdminAppointments = () => {
                                 </svg>
                                 Confirm Payment
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Refund Modal */}
+            {showRefundModal && selectedAppointment && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) closeRefundModal(); }}>
+                    <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9h2v4h-2V9zM9 7h2v1H9V7z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Refund Payment</h3>
+                                <p className="text-sm text-gray-600">Record that a refund was issued for this appointment</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-6">
+                            Are you sure you want to mark this appointment payment as <span className="font-semibold text-yellow-600">REFUNDED</span>?
+                            <br />
+                            <span className="text-xs text-gray-500 mt-1 block">Patient: <span className="font-medium text-gray-700">{selectedAppointment.patient_name}</span></span>
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button type="button" onClick={closeRefundModal} className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors">Cancel</button>
+                            <button onClick={handleRefund} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md font-medium transition-colors inline-flex items-center gap-2">Confirm Refund</button>
                         </div>
                     </div>
                 </div>

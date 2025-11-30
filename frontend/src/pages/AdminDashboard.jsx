@@ -430,7 +430,6 @@ const AdminDashboard = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Name</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
@@ -443,7 +442,6 @@ const AdminDashboard = () => {
                                     {users.length > 0 ? (
                                         users.map((u) => (
                                             <tr key={u.id} className={`hover:bg-gray-50 ${u.is_suspended ? 'bg-red-50' : ''}`}>
-                                                <td className="px-3 py-4 text-sm font-medium text-gray-900">{u.id}</td>
                                                 <td className="px-3 py-4 text-sm text-gray-600">{u.full_name}</td>
                                                 <td className="px-3 py-4 text-sm text-gray-600">{u.username || 'N/A'}</td>
                                                 <td className="px-3 py-4 text-sm text-gray-600">{u.email}</td>

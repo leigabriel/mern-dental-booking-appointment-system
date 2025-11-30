@@ -95,8 +95,9 @@ class Appointment {
 
     // Update payment status
     static async updatePaymentStatus(id, paymentStatus, paymentReference = null) {
-        const sql = 'UPDATE appointments SET payment_status = ?, payment_reference = ?, paid_at = NOW() WHERE id = ?';
-        const [result] = await db.query(sql, [paymentStatus, paymentReference, id]);
+      // Set paid_at only when marking as paid; clear it for other statuses (e.g., refunded)
+      const sql = `UPDATE appointments SET payment_status = ?, payment_reference = ?, paid_at = CASE WHEN ? = 'paid' THEN NOW() ELSE NULL END WHERE id = ?`;
+      const [result] = await db.query(sql, [paymentStatus, paymentReference, paymentStatus, id]);
         return result.affectedRows;
     }
 

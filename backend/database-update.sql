@@ -94,6 +94,22 @@ WHERE u.role = 'doctor'
 ORDER BY u.id;
 
 -- ==================================================
+-- APPOINTMENTS TABLE UPDATES
+-- Ensure payment / status columns exist (for existing DBs)
+-- ==================================================
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS payment_method ENUM('gcash', 'paypal', 'clinic') DEFAULT 'clinic',
+ADD COLUMN IF NOT EXISTS payment_status ENUM('unpaid', 'pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP NULL,
+ADD COLUMN IF NOT EXISTS decline_message TEXT DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL;
+
+ALTER TABLE appointments ADD INDEX IF NOT EXISTS idx_payment_status (payment_status);
+ALTER TABLE appointments ADD INDEX IF NOT EXISTS idx_payment_method (payment_method);
+
+-- ==================================================
 -- NOTES
 -- ==================================================
 -- 1. These ALTER TABLE commands are safe to run multiple times
