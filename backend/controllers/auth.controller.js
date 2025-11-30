@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const axios = require('axios');
 const crypto = require('crypto');
 const emailService = require('../services/email.service');
+const jwt = require('jsonwebtoken');
+const tabSessions = require('../services/tabSessions');
 
 // Register new user
 exports.register = async (req, res) => {
@@ -44,9 +46,9 @@ exports.register = async (req, res) => {
         // Send verification email via Mailpit
         try {
             await emailService.sendVerificationEmail(email, name, verificationToken);
-            console.log(`✅ Verification email sent to ${email}`);
+            console.log(`Verification email sent to ${email}`);
         } catch (emailError) {
-            console.error('❌ Failed to send verification email:', emailError);
+            console.error('Failed to send verification email:', emailError);
             // Don't fail registration if email fails
         }
 
@@ -103,17 +105,72 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Send user data
+        // On successful login, issue JWT and bind to tab id if provided
+        const payload = {
+            id: user.id,
+            role: user.role
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: process.env.JWT_EXPIRES_IN || '24h' });
+
+        // Read tab id header
+        const tabId = req.headers['x-tab-id'] || req.headers['x_tab_id'] || req.headers['X-Tab-ID'];
+        if (tabId) {
+            tabSessions.bindTokenToTab(token, tabId);
+        }
+
+        // Send user data + token
         res.status(200).send({
             id: user.id,
             name: user.full_name || user.name,
             username: user.username,
             email: user.email,
             role: user.role,
-            email_verified: !!user.email_verified_at
+            email_verified: !!user.email_verified_at,
+            accessToken: token
         });
     } catch (err) {
         res.status(500).send({ message: err.message });
+    }
+};
+
+// OAuth login exchange endpoint: accept email and return JWT bound to tab
+exports.oauthLogin = async (req, res) => {
+    const { email } = req.body;
+    try {
+        if (!email) return res.status(400).send({ message: 'Email required' });
+        const user = await User.findByEmail(email);
+        if (!user) return res.status(404).send({ message: 'User not found' });
+
+        const payload = { id: user.id, role: user.role };
+        const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: process.env.JWT_EXPIRES_IN || '24h' });
+        const tabId = req.headers['x-tab-id'] || req.headers['x_tab_id'] || req.headers['X-Tab-ID'];
+        if (tabId) tabSessions.bindTokenToTab(token, tabId);
+
+        res.status(200).send({
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            email_verified: !!user.email_verified_at,
+            accessToken: token
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message });
+    }
+};
+
+// Logout: unbind token for current tab
+exports.logout = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (!token) return res.status(400).send({ message: 'No token provided' });
+        tabSessions.unbindToken(token);
+        return res.status(200).send({ message: 'Logged out for this tab' });
+    } catch (err) {
+        return res.status(500).send({ message: err.message });
     }
 };
 
@@ -250,9 +307,9 @@ exports.verifyEmail = async (req, res) => {
         // Send welcome email
         try {
             await emailService.sendWelcomeEmail(user.email, user.name);
-            console.log(`✅ Welcome email sent to ${user.email}`);
+            console.log(`Welcome email sent to ${user.email}`);
         } catch (emailError) {
-            console.error('❌ Failed to send welcome email:', emailError);
+            console.error('Failed to send welcome email:', emailError);
             // Don't fail verification if email fails
         }
         

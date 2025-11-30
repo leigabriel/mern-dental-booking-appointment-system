@@ -10,8 +10,9 @@ const authService = {
     // Login user
     login: async (credentials) => {
         const response = await api.post('/auth/login', credentials);
-        if (response.data.id) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+        if (response.data && (response.data.accessToken || response.data.token)) {
+            // Store per-tab in sessionStorage
+            sessionStorage.setItem('user', JSON.stringify(response.data));
         }
         return response.data;
     },
@@ -23,11 +24,21 @@ const authService = {
     },
 
     // Login with Google
-    loginWithGoogle: (userData) => {
-        if (userData.id) {
-            localStorage.setItem('user', JSON.stringify(userData));
+    loginWithGoogle: async (userData) => {
+        // After Google callback, exchange user info for a JWT token bound to this tab
+        try {
+            const payload = { email: userData.email };
+            const response = await api.post('/auth/oauth-login', payload);
+            if (response.data && (response.data.accessToken || response.data.token)) {
+                sessionStorage.setItem('user', JSON.stringify(response.data));
+                return response.data;
+            }
+            return userData;
+        } catch (err) {
+            // fallback: store minimal user info in session (no token)
+            sessionStorage.setItem('user', JSON.stringify(userData));
+            return userData;
         }
-        return userData;
     },
 
     // Verify email
@@ -43,13 +54,25 @@ const authService = {
     },
 
     // Logout user
-    logout: () => {
-        localStorage.removeItem('user');
+    logout: async () => {
+        // Attempt to tell backend to unbind this token for the current tab
+        try {
+            const userStr = sessionStorage.getItem('user');
+            const token = userStr ? (JSON.parse(userStr).accessToken || JSON.parse(userStr).token) : null;
+            await api.post('/auth/logout', {}, {
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                }
+            });
+        } catch (err) {
+            // ignore
+        }
+        sessionStorage.removeItem('user');
     },
 
     // Get current user
     getCurrentUser: () => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     },
 

@@ -38,6 +38,11 @@ const AdminServiceManagement = () => {
         duration_mins: ''
     });
 
+    // Search & Pagination
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     useEffect(() => {
         fetchServices();
     }, []);
@@ -54,6 +59,19 @@ const AdminServiceManagement = () => {
             setLoading(false);
         }
     };
+
+    const filteredServices = services.filter(s => {
+        const q = searchTerm.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            String(s.id).includes(q) ||
+            (s.name || '').toLowerCase().includes(q) ||
+            String(s.price).toLowerCase().includes(q)
+        );
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredServices.length / itemsPerPage));
+    const paginatedServices = filteredServices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const openModal = (mode, service = null) => {
         setModalMode(mode);
@@ -206,14 +224,29 @@ const AdminServiceManagement = () => {
 
                     {/* Service List */}
                     <section className="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200">
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-bold text-gray-800">Service List</h2>
-                            <button 
-                                onClick={() => openModal('add')}
-                                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-                            >
-                                <FaPlus /> Add New Service
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Search services..."
+                                    value={searchTerm}
+                                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <select
+                                    value={itemsPerPage}
+                                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg"
+                                >
+                                    <option value={5}>5 / page</option>
+                                    <option value={10}>10 / page</option>
+                                    <option value={25}>25 / page</option>
+                                </select>
+                                <button onClick={() => openModal('add')} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <FaPlus /> Add New Service
+                                </button>
+                            </div>
                         </div>
 
                         {loading ? (
@@ -234,36 +267,38 @@ const AdminServiceManagement = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {services.length === 0 ? (
+                                        {filteredServices.length === 0 ? (
                                             <tr>
                                                 <td colSpan="5" className="px-3 py-4 text-center text-gray-500">No services found.</td>
                                             </tr>
                                         ) : (
-                                            services.map(service => (
+                                            paginatedServices.map(service => (
                                                 <tr key={service.id} className="hover:bg-gray-50">
                                                     <td className="px-3 py-4 text-sm font-medium text-gray-900">{service.id}</td>
                                                     <td className="px-3 py-4 text-sm text-gray-600">{service.name}</td>
                                                     <td className="px-3 py-4 text-sm text-gray-600">₱{parseFloat(service.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-3 py-4 text-sm text-gray-600">{service.duration_mins}</td>
                                                     <td className="px-3 py-4 text-sm space-x-2 whitespace-nowrap">
-                                                        <button
-                                                            onClick={() => openModal('edit', service)}
-                                                            className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"
-                                                        >
-                                                            <FaEdit /> Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => openDeleteModal(service)}
-                                                            className="text-red-600 hover:text-red-800 font-medium ml-2 inline-flex items-center gap-1"
-                                                        >
-                                                            <FaTrash /> Delete
-                                                        </button>
+                                                        <button onClick={() => openModal('edit', service)} className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"><FaEdit /> Edit</button>
+                                                        <button onClick={() => openDeleteModal(service)} className="text-red-600 hover:text-red-800 font-medium ml-2 inline-flex items-center gap-1"><FaTrash /> Delete</button>
                                                     </td>
                                                 </tr>
                                             ))
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        {filteredServices.length > 0 && (
+                            <div className="flex items-center justify-between mt-4">
+                                <div className="text-sm text-gray-600">Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredServices.length)} - {Math.min(currentPage * itemsPerPage, filteredServices.length)} of {filteredServices.length}</div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+                                    <span className="text-sm">Page {currentPage} / {totalPages}</span>
+                                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
+                                </div>
                             </div>
                         )}
                     </section>

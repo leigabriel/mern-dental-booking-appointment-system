@@ -5,7 +5,7 @@ module.exports = function (app) {
     app.use(function (req, res, next) {
         res.header(
             "Access-Control-Allow-Headers",
-            "x-access-token, Authorization, Origin, Content-Type, Accept"
+            "x-access-token, Authorization, X-Tab-ID, Origin, Content-Type, Accept"
         );
         next();
     });
@@ -51,6 +51,9 @@ module.exports = function (app) {
 
     // PUT /api/appointments/:id/payment - Update payment status (admin/staff only)
     app.put('/api/appointments/:id/payment', [verifyToken, isAdminOrStaff], controller.updatePaymentStatus);
+
+    // PUT /api/appointments/:id/refund - Refund payment (admin/staff only)
+    app.put('/api/appointments/:id/refund', [verifyToken, isAdminOrStaff], controller.refundPayment);
 
     // DELETE /api/appointments/clear-history - Clear user's appointment history
     app.delete('/api/appointments/clear-history', verifyToken, controller.clearHistory);

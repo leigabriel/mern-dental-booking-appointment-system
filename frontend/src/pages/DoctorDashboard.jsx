@@ -22,6 +22,7 @@ const DoctorDashboard = () => {
     const [showDeclineModal, setShowDeclineModal] = useState(false);
     const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
     const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [declineMessage, setDeclineMessage] = useState('');
     const [profileData, setProfileData] = useState({
@@ -37,7 +38,7 @@ const DoctorDashboard = () => {
                 setLoading(true);
                 setMessage({ type: '', text: '' });
                 
-                console.log('📋 Loading doctor dashboard data...');
+                console.log('Loading doctor dashboard data...');
                 
                 // Fetch both data sources in parallel
                 await Promise.all([
@@ -45,10 +46,10 @@ const DoctorDashboard = () => {
                     fetchDoctorProfile()
                 ]);
                 
-                console.log('✅ All doctor data loaded successfully');
+                console.log('All doctor data loaded successfully');
                 
             } catch (error) {
-                console.error('❌ Failed to load doctor data:', error.message);
+                console.error('Failed to load doctor data:', error.message);
                 setMessage({
                     type: 'error',
                     text: error.message
@@ -218,6 +219,16 @@ const DoctorDashboard = () => {
         }
     };
 
+    // Logout modal handlers
+    const closeLogoutModal = () => setShowLogoutModal(false);
+
+    const confirmLogout = () => {
+        // perform logout for this tab only
+        logout();
+        setShowLogoutModal(false);
+        navigate('/login');
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -285,7 +296,7 @@ const DoctorDashboard = () => {
                                 <FaEdit /> Edit Profile
                             </button>
                             <button
-                                onClick={handleLogout}
+                                onClick={() => setShowLogoutModal(true)}
                                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
                             >
                                 <FaSignOutAlt /> Logout
@@ -585,6 +596,29 @@ const DoctorDashboard = () => {
                             </button>
                             <button onClick={handleDeleteAccount} className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium shadow-md">
                                 Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Logout Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) closeLogoutModal(); }}>
+                    <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col items-center text-center mb-6">
+                            <div className="mb-4 text-gray-700 text-5xl">🔒</div>
+                            <h3 className="text-2xl font-semibold text-gray-800">Confirm Logout</h3>
+                        </div>
+                        <p className="text-gray-600 text-center mb-6">
+                            Are you sure you want to log out of this tab? This will only sign you out from the current tab.
+                        </p>
+                        <div className="flex justify-center gap-4">
+                            <button type="button" onClick={closeLogoutModal} className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+                                Cancel
+                            </button>
+                            <button onClick={confirmLogout} className="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium shadow-md">
+                                Logout
                             </button>
                         </div>
                     </div>

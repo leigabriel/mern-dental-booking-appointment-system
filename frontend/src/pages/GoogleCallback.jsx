@@ -24,22 +24,20 @@ const GoogleCallback = () => {
             }
 
             if (userParam) {
-                try {
+                    try {
                     const userData = JSON.parse(decodeURIComponent(userParam));
-                    
-                    // Save to localStorage first
-                    authService.loginWithGoogle(userData);
-                    
-                    // Update auth context
-                    login(userData);
 
-                    // Wait 2 seconds before redirect
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Exchange google callback user info for a JWT bound to this tab
+                    const loggedIn = await authService.loginWithGoogle(userData);
+
+                    // Update auth context with returned user/token info
+                    login(loggedIn || userData);
 
                     // Redirect based on role
-                    if (userData.role === 'admin') {
+                    const role = (loggedIn && loggedIn.role) || userData.role;
+                    if (role === 'admin') {
                         navigate('/admin/dashboard', { replace: true });
-                    } else if (userData.role === 'staff') {
+                    } else if (role === 'staff') {
                         navigate('/staff/dashboard', { replace: true });
                     } else {
                         navigate('/', { replace: true });

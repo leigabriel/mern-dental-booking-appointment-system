@@ -27,7 +27,7 @@ async function testDatabaseConnection() {
             database: process.env.DB_NAME
         });
         
-        console.log('✅ Connected to database!\n');
+        console.log('Connected to database!\n');
         
         // Test 1: Check if users table exists and has data
         console.log('Test 1: Checking users table...');
@@ -52,9 +52,9 @@ async function testDatabaseConnection() {
         console.log(`Found ${linked.length} linked doctor accounts:`);
         linked.forEach(l => {
             if (l.doctor_id) {
-                console.log(`  ✅ User ${l.user_id} (${l.username}) → Doctor ${l.doctor_id} (${l.doctor_name})`);
+                console.log(`  User ${l.user_id} (${l.username}) → Doctor ${l.doctor_id} (${l.doctor_name})`);
             } else {
-                console.log(`  ❌ User ${l.user_id} (${l.username}) → NO DOCTOR PROFILE`);
+                console.log(`  User ${l.user_id} (${l.username}) → NO DOCTOR PROFILE`);
             }
         });
         
@@ -75,22 +75,22 @@ async function testDatabaseConnection() {
         await connection.end();
         
         console.log('\n========================================');
-        console.log('✅ All database tests completed!');
+        console.log('All database tests completed!');
         console.log('========================================\n');
         
         // Summary
         if (users.length === 0) {
-            console.log('⚠️  WARNING: No doctor users found! Run database.sql to populate data.');
+            console.log('WARNING: No doctor users found! Run database.sql to populate data.');
         } else if (doctors.length === 0) {
-            console.log('⚠️  WARNING: No doctor profiles found! Run database.sql to populate data.');
+            console.log('WARNING: No doctor profiles found! Run database.sql to populate data.');
         } else if (linked.some(l => !l.doctor_id)) {
-            console.log('⚠️  WARNING: Some doctors are not linked to profiles!');
+            console.log('WARNING: Some doctors are not linked to profiles!');
         } else {
-            console.log('✅ Database is properly configured and populated.');
+            console.log('Database is properly configured and populated.');
         }
         
     } catch (error) {
-        console.error('\n❌ Database Test Failed!');
+        console.error('\nDatabase Test Failed!');
         console.error('Error:', error.message);
         console.error('\nPossible causes:');
         console.error('1. MySQL/MariaDB is not running');

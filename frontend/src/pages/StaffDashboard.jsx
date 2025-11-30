@@ -28,6 +28,11 @@ const StaffDashboard = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(true);
 
+    // Search & Pagination for Users table
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     // Fetch dashboard data
     useEffect(() => {
         fetchDashboardData();
@@ -79,6 +84,20 @@ const StaffDashboard = () => {
             setLoading(false);
         }
     };
+
+    const filteredUsers = users.filter(u => {
+        const q = searchTerm.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            (u.full_name || '').toLowerCase().includes(q) ||
+            (u.username || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q) ||
+            (u.role || '').toLowerCase().includes(q)
+        );
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const openSuspendModal = (userData) => {
         setSelectedUser(userData);
@@ -293,9 +312,19 @@ const StaffDashboard = () => {
 
                     {/* Users Table */}
                     <section className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-2xl font-bold text-gray-900">Users & Doctors</h2>
-                            <p className="text-gray-600 mt-1">Manage patient and doctor accounts</p>
+                        <div className="p-6 border-b border-gray-200 flex items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Users & Doctors</h2>
+                                <p className="text-gray-600 mt-1">Manage patient and doctor accounts</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <input type="text" placeholder="Search users..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg" />
+                                <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg">
+                                    <option value={5}>5 / page</option>
+                                    <option value={10}>10 / page</option>
+                                    <option value={25}>25 / page</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div className="overflow-x-auto">
@@ -311,49 +340,53 @@ const StaffDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {users.map((userData) => (
-                                        <tr key={userData.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="font-medium text-gray-900">{userData.full_name}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-gray-900">{userData.username}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-gray-900">{userData.email}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(userData.role)}`}>
-                                                    {userData.role.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${userData.is_suspended ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                    {userData.is_suspended ? 'Suspended' : 'Active'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                {!userData.is_suspended ? (
-                                                    <button
-                                                        onClick={() => openSuspendModal(userData)}
-                                                        className="text-red-500 px-4 py-2 rounded-lg  transition-colors"
-                                                    >
-                                                        Suspend
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleUnsuspend(userData.id)}
-                                                        className="text-green-500 px-4 py-2 rounded-lg transition-colors"
-                                                    >
-                                                        Unsuspend
-                                                    </button>
-                                                )}
-                                            </td>
+                                    {filteredUsers.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No users found.</td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        paginatedUsers.map((userData) => (
+                                            <tr key={userData.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="font-medium text-gray-900">{userData.full_name}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-gray-900">{userData.username}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-gray-900">{userData.email}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(userData.role)}`}>{userData.role.toUpperCase()}</span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${userData.is_suspended ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{userData.is_suspended ? 'Suspended' : 'Active'}</span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    {!userData.is_suspended ? (
+                                                        <button onClick={() => openSuspendModal(userData)} className="text-red-500 px-4 py-2 rounded-lg transition-colors">Suspend</button>
+                                                    ) : (
+                                                        <button onClick={() => handleUnsuspend(userData.id)} className="text-green-500 px-4 py-2 rounded-lg transition-colors">Unsuspend</button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination */}
+                        {filteredUsers.length > 0 && (
+                            <div className="flex items-center justify-between p-4">
+                                <div className="text-sm text-gray-600">Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredUsers.length)} - {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length}</div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+                                    <span className="text-sm">Page {currentPage} / {totalPages}</span>
+                                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
+                                </div>
+                            </div>
+                        )}
                     </section>
                 </main>
             </div>

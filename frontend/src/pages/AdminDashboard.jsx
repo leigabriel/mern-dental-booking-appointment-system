@@ -40,6 +40,10 @@ const AdminDashboard = () => {
     });
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(true);
+    // Search & Pagination for Users table
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Fetch dashboard data
     useEffect(() => {
@@ -240,6 +244,21 @@ const AdminDashboard = () => {
         return classes[role] || 'bg-gray-100 text-gray-800';
     };
 
+    // Derived lists for search & pagination
+    const filteredUsers = users.filter(u => {
+        const q = searchTerm.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            (u.full_name || '').toLowerCase().includes(q) ||
+            (u.username || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q) ||
+            (u.role || '').toLowerCase().includes(q)
+        );
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -418,13 +437,23 @@ const AdminDashboard = () => {
 
                     {/* User Accounts Table */}
                     <section className="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">User Accounts</h2>
-                            {user?.role === 'admin' && (
-                                <button type="button" onClick={() => openModal('add')} className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                    <FaPlus /> Add Admin/Staff
-                                </button>
-                            )}
+                        <div className="flex items-center justify-between mb-6 gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800">User Accounts</h2>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <input type="text" placeholder="Search users..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg" />
+                                <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg">
+                                    <option value={5}>5 / page</option>
+                                    <option value={10}>10 / page</option>
+                                    <option value={25}>25 / page</option>
+                                </select>
+                                {user?.role === 'admin' && (
+                                    <button type="button" onClick={() => openModal('add')} className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                        <FaPlus /> Add Admin/Staff
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
@@ -439,8 +468,12 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {users.length > 0 ? (
-                                        users.map((u) => (
+                                    {filteredUsers.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="7" className="px-3 py-4 text-center text-gray-500">No registered accounts found.</td>
+                                        </tr>
+                                    ) : (
+                                        paginatedUsers.map((u) => (
                                             <tr key={u.id} className={`hover:bg-gray-50 ${u.is_suspended ? 'bg-red-50' : ''}`}>
                                                 <td className="px-3 py-4 text-sm text-gray-600">{u.full_name}</td>
                                                 <td className="px-3 py-4 text-sm text-gray-600">{u.username || 'N/A'}</td>
@@ -452,13 +485,9 @@ const AdminDashboard = () => {
                                                 </td>
                                                 <td className="px-3 py-4">
                                                     {u.is_suspended ? (
-                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                            Suspended
-                                                        </span>
+                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
                                                     ) : (
-                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                            Active
-                                                        </span>
+                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
                                                     )}
                                                 </td>
                                                 <td className="px-3 py-4 text-sm space-x-2">
@@ -472,7 +501,6 @@ const AdminDashboard = () => {
                                                         </>
                                                     ) : (u.role === 'admin' || u.role === 'staff') ? (
                                                         <>
-                                                            {/* Only admins can edit/delete admin and staff accounts */}
                                                             {user?.role === 'admin' ? (
                                                                 <>
                                                                     <button onClick={() => openModal('edit', u)} className="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
@@ -488,10 +516,6 @@ const AdminDashboard = () => {
                                                 </td>
                                             </tr>
                                         ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="7" className="px-3 py-4 text-center text-gray-500">No registered accounts found.</td>
-                                        </tr>
                                     )}
                                 </tbody>
                             </table>

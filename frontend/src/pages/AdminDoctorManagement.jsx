@@ -18,6 +18,11 @@ const AdminDoctorManagement = () => {
     const [deleteTarget, setDeleteTarget] = useState({ id: null, name: '' });
     const [errors, setErrors] = useState([]);
 
+    // Search & Pagination
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     // Form state
     const [formData, setFormData] = useState({
         name: '',
@@ -51,6 +56,22 @@ const AdminDoctorManagement = () => {
             setLoading(false);
         }
     };
+
+    // Derived lists
+    const filteredDoctors = doctors.filter(d => {
+        const q = searchTerm.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            String(d.id).includes(q) ||
+            (d.name || '').toLowerCase().includes(q) ||
+            (d.specialty || '').toLowerCase().includes(q) ||
+            (d.email || '').toLowerCase().includes(q) ||
+            (d.username || '').toLowerCase().includes(q)
+        );
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredDoctors.length / itemsPerPage));
+    const paginatedDoctors = filteredDoctors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const openModal = (mode, doctor = null) => {
         setModalMode(mode);
@@ -221,14 +242,33 @@ const AdminDoctorManagement = () => {
 
                         {/* Doctor List */}
                         <section className="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200">
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-2xl font-bold text-gray-800">Doctor List</h2>
-                                <button
-                                    type="button"
-                                    onClick={() => openModal('add')}
-                                    className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
-                                    <i className="fas fa-plus mr-1"></i> Add New Doctor
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Search doctors..."
+                                        value={searchTerm}
+                                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <select
+                                        value={itemsPerPage}
+                                        onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                                    >
+                                        <option value={5}>5 / page</option>
+                                        <option value={10}>10 / page</option>
+                                        <option value={25}>25 / page</option>
+                                        <option value={50}>50 / page</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => openModal('add')}
+                                        className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                                        Add New Doctor
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -247,12 +287,14 @@ const AdminDoctorManagement = () => {
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {loading ? (
                                             <tr>
-                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">
-                                                    Loading doctors...
-                                                </td>
+                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">Loading doctors...</td>
                                             </tr>
-                                        ) : doctors.length > 0 ? (
-                                            doctors.map((doctor) => (
+                                        ) : filteredDoctors.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">No doctors found.</td>
+                                            </tr>
+                                        ) : (
+                                            paginatedDoctors.map((doctor) => (
                                                 <tr key={doctor.id} className="hover:bg-gray-50">
                                                     <td className="px-3 py-4 text-sm font-medium text-gray-900">{doctor.id}</td>
                                                     <td className="px-3 py-4 text-sm text-gray-600">{doctor.name}</td>
@@ -261,14 +303,10 @@ const AdminDoctorManagement = () => {
                                                     <td className="px-3 py-4 text-sm text-gray-600">
                                                         {doctor.user_id ? (
                                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                <i className="fas fa-user-check mr-1"></i>
                                                                 {doctor.username || 'Linked'}
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                                <i className="fas fa-user-slash mr-1"></i>
-                                                                No Account
-                                                            </span>
+                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">No Account</span>
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-4 text-sm">
@@ -276,58 +314,52 @@ const AdminDoctorManagement = () => {
                                                             role="button"
                                                             onClick={async () => {
                                                                 try {
-                                                                    // Toggle availability (if is_available is 0 => become available)
                                                                     const newStatus = doctor.is_available === 0;
                                                                     await doctorService.updateAvailability(doctor.id, newStatus);
-                                                                    setMessage({
-                                                                        type: 'success',
-                                                                        text: `Doctor availability updated to ${newStatus ? 'Available' : 'Unavailable'}`
-                                                                    });
-                                                                    // Refresh list but preserve current message (loadDoctors no longer clears messages)
+                                                                    setMessage({ type: 'success', text: `Doctor availability updated to ${newStatus ? 'Available' : 'Unavailable'}` });
                                                                     await loadDoctors();
-                                                                    // Auto-clear message after a short delay
                                                                     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
                                                                 } catch (error) {
-                                                                    setMessage({
-                                                                        type: 'error',
-                                                                        text: error.response?.data?.message || 'Failed to update availability'
-                                                                    });
+                                                                    setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update availability' });
                                                                 }
                                                             }}
-                                                            className={`cursor-pointer inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                                                                doctor.is_available !== 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                            }`}
+                                                            className={`cursor-pointer inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${doctor.is_available !== 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                                                         >
                                                             {doctor.is_available !== 0 ? 'Available' : 'Unavailable'}
                                                         </span>
                                                     </td>
                                                     <td className="px-3 py-4 text-sm space-x-2 whitespace-nowrap">
-                                                        <button
-                                                            className="text-blue-600 hover:text-blue-800 font-medium"
-                                                            onClick={() => openModal('edit', doctor)}>
-                                                            Edit
-                                                        </button>
+                                                        <button className="text-blue-600 hover:text-blue-800 font-medium" onClick={() => openModal('edit', doctor)}>Edit</button>
                                                         {user?.role === 'admin' && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openDeleteModal(doctor)}
-                                                                className="text-red-600 hover:text-red-800 font-medium ml-2">
-                                                                Delete
-                                                            </button>
+                                                            <button type="button" onClick={() => openDeleteModal(doctor)} className="text-red-600 hover:text-red-800 font-medium ml-2">Delete</button>
                                                         )}
                                                     </td>
                                                 </tr>
                                             ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="7" className="px-3 py-4 text-center text-gray-500">
-                                                    No doctors found.
-                                                </td>
-                                            </tr>
                                         )}
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination */}
+                            {filteredDoctors.length > 0 && (
+                                <div className="flex items-center justify-between mt-4">
+                                    <div className="text-sm text-gray-600">Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredDoctors.length)} - {Math.min(currentPage * itemsPerPage, filteredDoctors.length)} of {filteredDoctors.length}</div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1 border rounded disabled:opacity-50"
+                                        >Prev</button>
+                                        <span className="text-sm">Page {currentPage} / {totalPages}</span>
+                                        <button
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-1 border rounded disabled:opacity-50"
+                                        >Next</button>
+                                    </div>
+                                </div>
+                            )}
                         </section>
                     </main>
                 </div>

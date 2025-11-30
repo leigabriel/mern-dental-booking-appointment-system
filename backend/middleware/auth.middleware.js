@@ -1,32 +1,48 @@
-// Verify user ID from request body/headers
-const verifyToken = (req, res, next) => {
-    const userId = req.headers['x-user-id'] || req.body.userId;
-    const userRole = req.headers['x-user-role'] || req.body.userRole;
+const jwt = require('jsonwebtoken');
+const tabSessions = require('../services/tabSessions');
 
+// Verify JWT and tab binding
+const verifyToken = (req, res, next) => {
     console.log(`[Auth Middleware] ========================================`);
     console.log(`[Auth Middleware] Request: ${req.method} ${req.path}`);
-    console.log(`[Auth Middleware] Raw User ID from headers: ${req.headers['x-user-id']}`);
-    console.log(`[Auth Middleware] Raw User Role from headers: ${req.headers['x-user-role']}`);
-    console.log(`[Auth Middleware] User ID: ${userId}, Role: ${userRole}`);
 
-    if (!userId) {
-        console.error('[Auth Middleware] ERROR: No user ID provided!');
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader) {
+        console.error('[Auth Middleware] ERROR: No Authorization header provided!');
         console.log(`[Auth Middleware] ========================================`);
-        return res.status(403).send({ message: 'No user ID provided!' });
+        return res.status(403).send({ message: 'No token provided!' });
     }
 
-    const parsedUserId = parseInt(userId);
-    if (isNaN(parsedUserId)) {
-        console.error(`[Auth Middleware] ERROR: Invalid user ID: ${userId}`);
-        console.log(`[Auth Middleware] ========================================`);
-        return res.status(403).send({ message: 'Invalid user ID format!' });
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+        console.error('[Auth Middleware] ERROR: Malformed Authorization header');
+        return res.status(403).send({ message: 'Malformed token' });
     }
 
-    req.userId = parsedUserId;
-    req.userRole = userRole;
-    console.log(`[Auth Middleware] ✅ Request authorized for user ${req.userId} (${req.userRole})`);
-    console.log(`[Auth Middleware] ========================================`);
-    next();
+    const tabId = req.headers['x-tab-id'] || req.headers['x_tab_id'] || req.headers['X-Tab-ID'];
+    if (!tabId) {
+        console.error('[Auth Middleware] ERROR: No X-Tab-ID header provided!');
+        return res.status(403).send({ message: 'No tab id provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+
+        // Check token->tab binding
+        if (!tabSessions.isTokenAllowedForTab(token, tabId)) {
+            console.error('[Auth Middleware] ERROR: Token is not allowed for this tab');
+            return res.status(403).send({ message: 'Token not allowed for this tab' });
+        }
+
+        req.userId = decoded.id;
+        req.userRole = decoded.role;
+        console.log(`[Auth Middleware] ✅ Request authorized for user ${req.userId} (${req.userRole}) on tab ${tabId}`);
+        console.log(`[Auth Middleware] ========================================`);
+        next();
+    } catch (err) {
+        console.error('[Auth Middleware] ERROR: Token verification failed', err.message);
+        return res.status(401).send({ message: 'Unauthorized' });
+    }
 };
 
 // Check if user is admin

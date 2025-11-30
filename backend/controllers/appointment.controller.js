@@ -196,7 +196,7 @@ exports.confirmAppointment = async (req, res) => {
     }
 };
 
-// Decline appointment with message (Admin/Staff only)
+// Decline appointment with message (Admin/Staff/Doctor)
 exports.declineAppointment = async (req, res) => {
     const { decline_message } = req.body;
 
@@ -211,10 +211,28 @@ exports.declineAppointment = async (req, res) => {
             return res.status(404).send({ message: 'Appointment not found.' });
         }
 
-        // Update status to declined and save the decline message
+        // Try to annotate the decline message with the actor (admin/staff/doctor) who performed the action.
+        let annotatedMessage = decline_message;
+        try {
+            const User = require('../models/user.model');
+            const actor = await User.findById(req.userId);
+            const roleLabel = req.userRole ? req.userRole.charAt(0).toUpperCase() + req.userRole.slice(1) : 'Staff';
+            const actorName = actor ? (actor.full_name || actor.name || actor.username) : null;
+            if (actorName) {
+                annotatedMessage = `${roleLabel} ${actorName}: ${decline_message}`;
+            } else {
+                annotatedMessage = `${roleLabel}: ${decline_message}`;
+            }
+        } catch (innerErr) {
+            // If user lookup fails, fallback to role-only annotation
+            const roleLabel = req.userRole ? req.userRole.charAt(0).toUpperCase() + req.userRole.slice(1) : 'Staff';
+            annotatedMessage = `${roleLabel}: ${decline_message}`;
+        }
+
+        // Update status to declined and save the annotated decline message
         await db.query(
             'UPDATE appointments SET status = ?, decline_message = ? WHERE id = ?',
-            ['declined', decline_message, req.params.id]
+            ['declined', annotatedMessage, req.params.id]
         );
 
         res.status(200).send({ message: 'Appointment declined successfully!' });
@@ -255,6 +273,29 @@ exports.updatePaymentStatus = async (req, res) => {
 
         res.status(200).send({ message: 'Payment status updated successfully!' });
     } catch (err) {
+        res.status(500).send({ message: err.message });
+    }
+};
+
+// Refund payment (Admin/Staff only) - best-effort: call provider refund in future
+exports.refundPayment = async (req, res) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).send({ message: 'Appointment not found.' });
+        }
+
+        if (appointment.payment_status !== 'paid') {
+            return res.status(400).send({ message: 'Only paid payments can be refunded.' });
+        }
+
+        // For now, perform a server-side marking of refunded.
+        // In production, call the payment provider (PayPal / PayMongo) to process a refund.
+        await Appointment.updatePaymentStatus(req.params.id, 'refunded', `refund-${req.params.id}`);
+
+        res.status(200).send({ message: 'Payment marked as refunded (server-side).' });
+    } catch (err) {
+        console.error('Refund payment error:', err);
         res.status(500).send({ message: err.message });
     }
 };

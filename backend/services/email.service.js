@@ -89,10 +89,10 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
                 <body>
                     <div class="container">
                         <div class="header">
-                            <h1>🦷 Welcome to DentalCare!</h1>
+                            <h1>Welcome to DentalCare</h1>
                         </div>
                         <div class="content">
-                            <h2>Hi ${name}! 👋</h2>
+                            <h2>Hi ${name}!</h2>
                             
                             <p>Thank you for registering with DentalCare System. We're excited to have you on board!</p>
                             
@@ -103,16 +103,16 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
                             </center>
                             
                             <div class="note">
-                                <strong>⚠️ Important:</strong> You need to verify your email before you can log in to your account.
+                                <strong>Important:</strong> You need to verify your email before you can log in to your account.
                             </div>
                             
                             <p>Once verified, you'll be able to:</p>
                             <ul>
-                                <li>📅 Book dental appointments online</li>
-                                <li>🏥 Browse our comprehensive dental services</li>
-                                <li>👨‍⚕️ Choose from our expert dentists</li>
-                                <li>📊 Track your appointment history</li>
-                                <li>💳 Manage payments securely</li>
+                                <li>Book dental appointments online</li>
+                                <li>Browse our comprehensive dental services</li>
+                                <li>Choose from our expert dentists</li>
+                                <li>Track your appointment history</li>
+                                <li>Manage payments securely</li>
                             </ul>
                             
                             <p>If you didn't create this account, you can safely ignore this email.</p>
@@ -163,11 +163,11 @@ This email was sent to ${email}
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('✅ Verification email sent:', info.messageId);
-        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
+        console.log('Verification email sent:', info.messageId);
+        console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
         return info;
     } catch (error) {
-        console.error('❌ Error sending verification email:', error);
+        console.error('Error sending verification email:', error);
         throw error;
     }
 };
@@ -180,7 +180,7 @@ const sendWelcomeEmail = async (email, name) => {
         const mailOptions = {
             from: process.env.MAIL_FROM || 'DentalCare System <noreply@dentalcare.com>',
             to: email,
-            subject: '✅ Welcome to DentalCare - Email Verified!',
+            subject: 'Welcome to DentalCare - Email Verified',
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -200,7 +200,7 @@ const sendWelcomeEmail = async (email, name) => {
                             <h1>✅ Email Verified Successfully!</h1>
                         </div>
                         <div class="content">
-                            <h2>Welcome aboard, ${name}! 🎉</h2>
+                            <h2>Welcome aboard, ${name}!</h2>
                             
                             <p>Your email has been successfully verified! You now have full access to all DentalCare features.</p>
                             
@@ -229,10 +229,10 @@ const sendWelcomeEmail = async (email, name) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('✅ Welcome email sent:', info.messageId);
+        console.log('Welcome email sent:', info.messageId);
         return info;
     } catch (error) {
-        console.error('❌ Error sending welcome email:', error);
+        console.error('Error sending welcome email:', error);
         // Don't throw - welcome email is not critical
     }
 };

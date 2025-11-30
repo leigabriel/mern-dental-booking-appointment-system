@@ -30,14 +30,14 @@ async function testDoctorProfileLookup() {
         // Find doctor profile
         const doctor = await Doctor.findByUserId(testUserId);
         if (doctor) {
-            console.log('\n✅ Doctor profile found:');
+            console.log('\nDoctor profile found:');
             console.log(`   Doctor ID: ${doctor.id}`);
             console.log(`   Name: ${doctor.name}`);
             console.log(`   Specialty: ${doctor.specialty}`);
             console.log(`   Email: ${doctor.email}`);
             console.log(`   Linked to User ID: ${doctor.user_id}`);
         } else {
-            console.log('\n❌ Doctor profile NOT found');
+            console.log('\nDoctor profile NOT found');
             console.log('   This should trigger auto-creation in the actual endpoint');
         }
 
@@ -46,7 +46,7 @@ async function testDoctorProfileLookup() {
         console.log('========================================\n');
 
     } catch (error) {
-        console.error('\n❌ Test failed with error:');
+        console.error('\nTest failed with error:');
         console.error(error);
         console.log('\n========================================\n');
     }

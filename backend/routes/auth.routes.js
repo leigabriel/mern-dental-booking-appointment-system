@@ -6,7 +6,7 @@ module.exports = function (app) {
     app.use(function (req, res, next) {
         res.header(
             "Access-Control-Allow-Headers",
-            "x-access-token, Authorization, Origin, Content-Type, Accept"
+            "x-access-token, Authorization, X-Tab-ID, Origin, Content-Type, Accept"
         );
         next();
     });
@@ -16,6 +16,12 @@ module.exports = function (app) {
 
     // POST /api/auth/login - Login user
     app.post('/api/auth/login', controller.login);
+
+    // POST /api/auth/oauth-login - Exchange oauth user info for a JWT bound to this tab
+    app.post('/api/auth/oauth-login', controller.oauthLogin);
+
+    // POST /api/auth/logout - Unbind token for this tab
+    app.post('/api/auth/logout', controller.logout);
 
     // GET /api/auth/google - Get Google OAuth URL
     app.get('/api/auth/google', controller.getGoogleAuthUrl);

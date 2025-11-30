@@ -10,7 +10,7 @@ import {
     FaClock,
     FaFilter,
     FaPrint,
-    FaFileCsv,
+    FaFileAlt,
     FaFilePdf,
     FaUserMd,
     FaBriefcaseMedical,
@@ -582,7 +582,7 @@ const AdminReports = () => {
                                         <h3 className="text-3xl font-bold mt-2">{stats.totalAppointments}</h3>
                                     </div>
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">
-                                        <FaCalendarCheck className="text-3xl" />
+                                        <FaCalendarCheck className="text-3xl text-blue-600" />
                                     </div>
                                 </div>
                             </div>
@@ -594,7 +594,7 @@ const AdminReports = () => {
                                         <h3 className="text-3xl font-bold mt-2">₱{stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
                                     </div>
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">
-                                        <FaMoneyBillWave className="text-3xl" />
+                                        <FaMoneyBillWave className="text-3xl text-green-600" />
                                     </div>
                                 </div>
                             </div>
@@ -606,7 +606,7 @@ const AdminReports = () => {
                                         <h3 className="text-3xl font-bold mt-2">₱{stats.paidRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
                                     </div>
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">
-                                        <FaCheckCircle className="text-3xl" />
+                                        <FaCheckCircle className="text-3xl text-green-600" />
                                     </div>
                                 </div>
                             </div>
@@ -618,7 +618,7 @@ const AdminReports = () => {
                                         <h3 className="text-3xl font-bold mt-2">₱{stats.pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
                                     </div>
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">
-                                        <FaClock className="text-3xl" />
+                                        <FaClock className="text-3xl text-amber-600" />
                                     </div>
                                 </div>
                             </div>
@@ -664,7 +664,7 @@ const AdminReports = () => {
                                         onClick={() => handleExport('appointments', 'csv')}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
                                     >
-                                        <FaFileCsv /> Export CSV
+                                        <FaFileAlt /> Export CSV
                                     </button>
                                     <button
                                         onClick={() => handleExport('appointments', 'pdf')}
@@ -705,7 +705,7 @@ const AdminReports = () => {
                                         onClick={() => handleExport('revenue', 'csv')}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
                                     >
-                                        <FaFileCsv /> Export CSV
+                                        <FaFileAlt /> Export CSV
                                     </button>
                                     <button
                                         onClick={() => handleExport('revenue', 'pdf')}
@@ -742,7 +742,7 @@ const AdminReports = () => {
                                         onClick={() => handleExport('doctors', 'csv')}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
                                     >
-                                        <FaFileCsv /> Export CSV
+                                        <FaFileAlt /> Export CSV
                                     </button>
                                     <button
                                         onClick={() => handleExport('doctors', 'pdf')}
@@ -797,7 +797,7 @@ const AdminReports = () => {
                                         onClick={() => handleExport('services', 'csv')}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
                                     >
-                                        <FaFileCsv /> Export CSV
+                                        <FaFileAlt /> Export CSV
                                     </button>
                                     <button
                                         onClick={() => handleExport('services', 'pdf')}

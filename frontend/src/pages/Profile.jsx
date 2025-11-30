@@ -608,8 +608,8 @@ const Profile = () => {
                                                             <button onClick={() => handleCancel(app.id)} className="inline-flex items-center gap-2 px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded">
                                                                 Cancel
                                                             </button>
-                                                        ) : app.status === 'declined' && app.notes ? (
-                                                            <button type="button" onClick={() => openDeclineModal(app.notes)} className="inline-flex items-center gap-2 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded">
+                                                        ) : app.status === 'declined' && (app.decline_message || app.notes) ? (
+                                                            <button type="button" onClick={() => openDeclineModal(app.decline_message || app.notes)} className="inline-flex items-center gap-2 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded">
                                                                 View message
                                                             </button>
                                                         ) : (
@@ -701,9 +701,17 @@ const Profile = () => {
                             {/* Status */}
                             <div>
                                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Status</p>
-                                <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold">
-                                    ✓ CONFIRMED
-                                </span>
+                                <div>
+                                    <span className="inline-block px-4 py-2 rounded-full text-sm font-bold border" style={{ background: 'transparent' }}>
+                                        {selectedAppointment.status ? (selectedAppointment.status.charAt(0).toUpperCase() + selectedAppointment.status.slice(1)) : 'N/A'}
+                                    </span>
+                                    {selectedAppointment.status === 'declined' && (selectedAppointment.decline_message || selectedAppointment.notes) && (
+                                        <div className="mt-3 bg-rose-50 border border-rose-100 p-3 rounded">
+                                            <p className="text-xs text-rose-700 font-semibold">Decline Message</p>
+                                            <p className="text-sm text-slate-900 mt-1">{selectedAppointment.decline_message || selectedAppointment.notes}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Payment Info */}
